@@ -1,16 +1,23 @@
 #gdb -q ./simple_program -x t.py 
+from dis import disassemble
 import gdb
 #from gdb import pretty_printer as pp
 from appJar import gui
 
+def setbreakpoint():
+    break_num = app.getEntry("breakpoint")
+    gdb.execute("b {break_num}")
+
 def breakmain():
     gdb.execute('b main')
 
+def disassemble_main():
+    o = gdb.execute('disassemble main', to_string=True)
+    print(len(o))
 def next ():
-    pplist = gdb.pretty_printers
-    for p in pplist:
-        print(p)
-    gdb.execute('n')
+    o = gdb.execute('n', to_string=True)
+    print(f"python: {o}")
+    #print(o)
 
 def run():
     gdb.execute('r')
@@ -24,8 +31,12 @@ app = gui("gui name here", "400x200")
 app.addButton("next", next)
 app.addButton("run", run)
 app.addButton("break main", breakmain)
+app.addButton("disassemble main", disassemble_main)
 app.addButton("quit", quit)
 
+#sets a breakpoint
+#app.addLabelEntry("breakpoint")
+#app.addButton("Set Breakpoint", setbreakpoint)
 app.go()
 
 #gdb.execute('quit')

@@ -1,7 +1,9 @@
 from appJar import gui
 def click():
-    print("click")
+    a = app.getEntry("blarg")
+    print(a)
 app = gui("gui name here", "400x200")
-app.addTextArea("blarg")
+app.addLabelEntry("blarg")
+
 app.addButton("button", click)
 app.go()
