@@ -13,7 +13,10 @@ def breakmain():
 
 def disassemble_main():
     o = gdb.execute('disassemble main', to_string=True)
-    print(len(o))
+    #print(len(o))
+    print(type(o))
+    #gdb.execute('disassemble main')
+
 def next ():
     o = gdb.execute('n', to_string=True)
     print(f"python: {o}")

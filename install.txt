@@ -1,0 +1,5 @@
+pip
+pip install tk 
+pip install appjar
+sudo apt-get install python3-tk 
+add-auto-load-safe-path <path to project>/.gdbinit
