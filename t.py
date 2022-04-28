@@ -14,6 +14,7 @@ def breakfunc():
 
 def breakmain():
     gdb.execute('b main')
+#retrieve a list of function names and function line numbers. 
 def getAllFunctions():
     o = gdb.execute('info functions', to_string = True)
     s = o.splitlines()
@@ -33,22 +34,22 @@ def getAllFunctions():
     funcNumbers = []
     funcNames = []
     for line in allstring:
-        #fnumber = re.search(getFuncNumberRE, line).group()
+        fnumber = re.search(getFuncNumberRE, line).group()
         #print(fnumber)
-        #funcNumbers.append(fnumber[:-1])
+        funcNumbers.append(fnumber[:-1])
         #print(funcNumbers)
         fname = re.search(getFuncNameRE,line).group()
         #print (fname)
         funcNames.append(fname[1:-1])
         #print(funcNames)
     #breakAllFunctionsByName(funcNames)
-    breakAllFunctionsByNUmber(funcNumbers)
+    breakAllFunctionsByNumber(funcNumbers)
     
 def breakAllFunctionsByName(funcNames):
     for name in funcNames:
         gdb.execute(f'b {name}')
 
-def breakAllFunctionsByNUmber(funcNumbers):
+def breakAllFunctionsByNumber(funcNumbers):
     for num in funcNumbers:
         gdb.execute(f'b {num}')
 
