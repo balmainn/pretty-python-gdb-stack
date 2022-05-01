@@ -1,0 +1,7 @@
+dependencies 
+
+pip install appjar
+pip inst
+pip install python-dev-tools
+apt install texinfo ? 
+apt-get install gcc-multilib
