@@ -1,4 +1,4 @@
-
+import re
 registersString = """eax            0xf7fb6088          -134520696
 ecx            0x9321354d          -1826540211
 edx            0xffffce64          -12700
@@ -16,6 +16,11 @@ es             0x2b                43
 fs             0x0                 0
 gs             0x63                99"""
 
+regexAll = "\b\S*\b"
 registerInfo = registersString.splitlines()
 for r in registerInfo:
-    print(r)
+     thing = re.search(regexAll,r).group()
+     print(thing)
+
+#name is this regex ^\S*
+#contents is htis regex \S*$ 
