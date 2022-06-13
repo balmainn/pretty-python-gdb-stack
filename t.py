@@ -82,6 +82,10 @@ app.addButton("disassemble main", disassemble_main)
 app.addButton("get all functions", getAllFunctions)
 app.addButton("quit", quit)
 
+#app2 = gui("gui2 name here", "400x200")
+app.startSubWindow("one",modal=True)
+app.addTextArea("outputtext")
+
 #sets a breakpoint
 #app.addLabelEntry("breakpoint")
 #app.addButton("Set Breakpoint", setbreakpoint)
