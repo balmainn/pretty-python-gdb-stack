@@ -1,10 +1,12 @@
 
+from atexit import register
 from types import *
 from appJar import gui 
 import math
 import os
 import re
-from black import T
+import time
+#from black import T
 import gdb
 
 #look at the following link 
@@ -56,7 +58,7 @@ def getStackAddressEnd():
     #print(s2)
     return int(s2,16)
 
-
+#returns addrs regslist 
 def populateRegisters():
     registers = gdb.execute('info registers',to_string = True)
     regsize = 0
@@ -126,6 +128,61 @@ gdb.execute('b main')
 gdb.execute('r')
 #app=gui("hex demo", "400x400")
 regaddrs0, reglist0 = populateRegisters()
+width = 400 
+height = 400
+
+num_rectangles = len(regaddrs0)
+size = 100
+app = gui("canvas test", str(width)+'x'+str(height))
+canvas = app.addCanvas("c1")
+# i+1 avoides the case where i is 0, thus nothing gets added. 
+canvasListTextArr = []
+canvasAddressArr = []
+for i in range(num_rectangles+8):
+    
+    #canvas.create_rectangle(x0,y0,x1,y1)
+    canvas.create_rectangle(((width/2)-size),0,((width/2)+size),(i+1)*50)
+    #c1 = canvas.create_text(((width/2)+size)+22, ((i+1)*50)-25,text=f"{reglist0[i]}")
+    c1 = canvas.create_text(((width/2)+size)+22, ((i+1)*50)-25,text="BLAAAAANK")
+    #c2 = canvas.create_text(width/2, ((i+1)*50)-25,text=f"{regaddrs0[i]}")
+    c2 = canvas.create_text(width/2, ((i+1)*50)-25,text="BLAAAANK")
+    canvasListTextArr.append(c1)
+    canvasAddressArr.append(c2)
+#print(canvasListTextArr)
+#print(canvasAddressArr)
+#canvas.itemconfig(2,text="NEWTEXT")
+#app = gui("t2","400x400")
+#canvas = app.addCanvas("c2")
+def updateText(num_rectangles, canvasAddressArr,canvasListTextArr,regaddrs,reglist):
+    for i in range(num_rectangles):
+        canvas.itemconfig(canvasAddressArr[i],text=f"{regaddrs[i]}")
+        canvas.itemconfig(canvasListTextArr[i],text=f"{reglist[i]}")
+
+def next():
+    gdb.execute('n')
+
+def updateRegisters():
+    print("update button")
+    next()
+    print("next")
+    regaddrs, reglist = populateRegisters()
+    print(regaddrs)
+    num_rectangles = len(regaddrs)
+    updateText(num_rectangles,canvasAddressArr,canvasListTextArr,regaddrs,reglist)
+    
+
+def test():
+    print("click")
+
+#app.addButton('updateText',updateText(num_rectangles,canvasAddressArr,canvasListTextArr,regaddrs0,reglist0))
+app.addButton('updateRegs',updateRegisters)
+app.addButton('t',test)
+    #canvas.create_text(((width/2)+size)+22, ((i+1)*50)-25,text=f"{reglist0[i]}")
+    #canvas.create_text(width/2, ((i+1)*50)-25,text=f"{regaddrs0[i]}")
+
+
+app.go()
+#app.go()
 #gdb.execute('n')
 #regaddrs1, reglist1 = populateRegisters()
 #gdb.execute('n')
