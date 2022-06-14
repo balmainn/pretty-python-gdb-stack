@@ -7,4 +7,5 @@ int main(){
     printf("The address of buff is : %p \n", buff);
     printf("the address of str is : %p \n", str);
     printf("str contains: %s \n",str);
+    int end = 0;
 }

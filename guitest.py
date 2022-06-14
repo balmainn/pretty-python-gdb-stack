@@ -37,13 +37,21 @@ with open(filepath,'r') as f:
     tex = f.readlines()
     for t in tex:
         tout.append(t)
-i = 0
-app.addTextArea('t1')
-app.setTextArea('t1', "text",callFunction=True) 
+
+#row, column, col_span, row_span 
+app.addTextArea('gdbout',0,0, 6, 3)
+app.setTextArea('gdbout', "text",callFunction=True) 
+app.addTextArea('code',0,3,6,2)
 #bind the enter key to the click function
 #might want the ability to find what window is being used. 
 #app.bindKey('<return>',click)
-app.addTextArea('t2',text="GDB window")
+app.addButton('b0',click,6,0,0,0)
+app.addButton('b1',click,6,1,0,0)
+app.addButton('b2',click,6,2,1,1)
+app.addButton('b3',click,6,3,1,1)
+app.addButton('b4',click,6,4,1,1)
+app.addButton('b5',click,6,5,1,1)
+app.addTextArea('gdbin',7,0,5,2,text="GDB window")
 #runs click function on t2 whenever mouse is put over this (could be useful later)
 #maybe use one of these for each window to figure out where the mouse is....?
 
@@ -54,7 +62,7 @@ app.addTextArea('t2',text="GDB window")
 #app.setTextAreaChangeFunction('t2',click)
 
 
-ent = app.getEntryWidget("t2")
+#ent = app.getEntryWidget("t1")
 #ent.bind("<FocusIn>",click)
 #e = app.getEntry('t1')
 #e.bindKey("a",click)
