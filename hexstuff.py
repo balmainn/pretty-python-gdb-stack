@@ -105,9 +105,11 @@ def populateRegisters():
     printRegisters(regaddrs, reglist)
 
     #bubble sort because why not
+    
     for i in range(len(regaddrs)):
         for j in range(len(regaddrs)):
-            if int(regaddrs[i],16) > int(regaddrs[j],16):
+            # < should be the correct direction
+            if int(regaddrs[i],16) < int(regaddrs[j],16):
             # print(f"swapping: {(regaddrs[i])} with {(regaddrs[j])}")
                 tmpaddrs = regaddrs[i]
                 regaddrs[i] = regaddrs[j]
