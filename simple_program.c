@@ -6,9 +6,14 @@ int function(){
     int functionVar = 3;
     return 1;
 }
+int notAccessed(){
+    printf("you have reached the unreachable function\n");
+    int noAccess = 42;
+    return 1;
+}
 int main(){
     char * m = malloc(sizeof(char));
-    char * buff [32];
+    char buff [32];
     int t = function();
     printf("function: %d\n", t);
     char str [32] ;

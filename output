@@ -1,0 +1,362 @@
+regexmatch
+from stackclass import * 
+
+regexmatch
+from heapclass import *
+
+NO MATCH
+
+
+NO MATCH
+def getPID() ->int:
+
+NO MATCH
+        #pid = 3
+
+NO MATCH
+        return 3
+
+NO MATCH
+
+
+NO MATCH
+class Program:
+
+NO MATCH
+    
+
+NO MATCH
+    executable =""
+
+NO MATCH
+    filepath = ""
+
+NO MATCH
+    #PID = getPID()
+
+NO MATCH
+    programStack = Stack
+
+NO MATCH
+    programHeap = Heap
+
+NO MATCH
+    PID = 0
+
+NO MATCH
+    
+
+NO MATCH
+    def __init__(self, pid):
+
+NO MATCH
+      self.PID = pid
+
+NO MATCH
+import gdb
+
+NO MATCH
+#oh the jank is bad with this one. 
+
+regexmatch
+#from stackclass import *
+
+regexmatch
+#from functions import *
+
+NO MATCH
+testfunc()
+
+NO MATCH
+
+
+NO MATCH
+#myProgram = Program(3)
+
+NO MATCH
+#print(myProgram.PID)
+
+NO MATCH
+
+
+NO MATCH
+print("BLAAARAG")
+
+NO MATCH
+# funcNames, funcNumbers, funcAddrs = getAllFunctions()
+
+NO MATCH
+# breakAllFunctionsByNumber(funcNumbers)
+
+NO MATCH
+# gdb.execute('4')
+
+NO MATCH
+# locals = gdb.execute('info locals',to_string=True)
+
+NO MATCH
+# print(locals)
+
+NO MATCH
+# gdb.execute('c')
+
+NO MATCH
+# print("~~~~~~~~~~~")
+
+NO MATCH
+# locals = gdb.execute('info locals',to_string=True)
+
+NO MATCH
+# print(locals)
+
+NO MATCH
+
+
+NO MATCH
+
+
+NO MATCH
+# easy path 
+
+NO MATCH
+# info functions 
+
+NO MATCH
+# set breakpoint for all functions 
+
+NO MATCH
+# r 
+
+NO MATCH
+# info locals (main)
+
+NO MATCH
+# c 
+
+NO MATCH
+# info locals (function)
+
+NO MATCH
+# . . . 
+
+NO MATCH
+# end [Inferior 1 (process <>) exited normally]
+
+NO MATCH
+# r (to restart program and do other things)
+
+NO MATCH
+
+
+NO MATCH
+
+
+NO MATCH
+
+
+NO MATCH
+
+
+NO MATCH
+
+
+NO MATCH
+
+
+NO MATCH
+
+
+NO MATCH
+# mystack = stack
+
+NO MATCH
+
+
+NO MATCH
+# addReg("0xffff0004", "test4", mystack)
+
+NO MATCH
+# addReg("0xffff0002", "test2", mystack)
+
+NO MATCH
+# addReg("0xffff0003", "test3", mystack)
+
+NO MATCH
+# addReg("0xffff0001", "test1", mystack)
+
+NO MATCH
+# addReg("0xffff0005", "test5", mystack)
+
+NO MATCH
+# addReg("0xffff0000", "test0", mystack)
+
+NO MATCH
+
+
+NO MATCH
+# printRegs(mystack)
+
+NO MATCH
+
+
+NO MATCH
+#this does work but its... wonky 
+
+NO MATCH
+#o = os.popen('gdb ./simple_program -x hexstuff.py').read()
+
+NO MATCH
+
+
+NO MATCH
+
+
+NO MATCH
+#sortRegs(mystack)
+
+NO MATCH
+#printRegs(mystack)
+
+NO MATCH
+#print(mystack.both)
+
+writing: 
+
+writing: def getPID() ->int:
+
+writing:         #pid = 3
+
+writing:         return 3
+
+writing: 
+
+writing: class Program:
+
+writing:     
+
+writing:     executable =""
+
+writing:     filepath = ""
+
+writing:     #PID = getPID()
+
+writing:     programStack = Stack
+
+writing:     programHeap = Heap
+
+writing:     PID = 0
+
+writing:     
+
+writing:     def __init__(self, pid):
+
+writing:       self.PID = pid
+
+writing: import gdb
+
+writing: #oh the jank is bad with this one. 
+
+writing: testfunc()
+
+writing: 
+
+writing: #myProgram = Program(3)
+
+writing: #print(myProgram.PID)
+
+writing: 
+
+writing: print("BLAAARAG")
+
+writing: # funcNames, funcNumbers, funcAddrs = getAllFunctions()
+
+writing: # breakAllFunctionsByNumber(funcNumbers)
+
+writing: # gdb.execute('4')
+
+writing: # locals = gdb.execute('info locals',to_string=True)
+
+writing: # print(locals)
+
+writing: # gdb.execute('c')
+
+writing: # print("~~~~~~~~~~~")
+
+writing: # locals = gdb.execute('info locals',to_string=True)
+
+writing: # print(locals)
+
+writing: 
+
+writing: 
+
+writing: # easy path 
+
+writing: # info functions 
+
+writing: # set breakpoint for all functions 
+
+writing: # r 
+
+writing: # info locals (main)
+
+writing: # c 
+
+writing: # info locals (function)
+
+writing: # . . . 
+
+writing: # end [Inferior 1 (process <>) exited normally]
+
+writing: # r (to restart program and do other things)
+
+writing: 
+
+writing: 
+
+writing: 
+
+writing: 
+
+writing: 
+
+writing: 
+
+writing: 
+
+writing: # mystack = stack
+
+writing: 
+
+writing: # addReg("0xffff0004", "test4", mystack)
+
+writing: # addReg("0xffff0002", "test2", mystack)
+
+writing: # addReg("0xffff0003", "test3", mystack)
+
+writing: # addReg("0xffff0001", "test1", mystack)
+
+writing: # addReg("0xffff0005", "test5", mystack)
+
+writing: # addReg("0xffff0000", "test0", mystack)
+
+writing: 
+
+writing: # printRegs(mystack)
+
+writing: 
+
+writing: #this does work but its... wonky 
+
+writing: #o = os.popen('gdb ./simple_program -x hexstuff.py').read()
+
+writing: 
+
+writing: 
+
+writing: #sortRegs(mystack)
+
+writing: #printRegs(mystack)
+
+writing: #print(mystack.both)
+
