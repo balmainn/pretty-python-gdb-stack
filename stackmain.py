@@ -1,110 +1,267 @@
 #import gdb
-import argparse
+#import argparse
 #oh the jank is bad with this one. 
 #everything is a single file now
 #but we "should" be able to still import and use things seperately...?
 #from stackclass import *
-from functions import *
-from programclass import *
+#from functions import *
+#from programclass import *
 import os
+import gdb 
+import re
+from functions import *
 
-def init_argparse() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        #usage="%(prog)s [OPTIONS]",
-        description="description goes here"
-    )
-    parser.add_argument(
-        "-f", "--file_path", 
-        help= "specify the file used on gdb"
-    )
-    return parser
+def getAllFunctions():
+    o = gdb.execute('info functions', to_string = True)
+    s = o.splitlines()
+    #print(s)
+    nbs = 'Non-debugging symbols:'
+    ctr = 0
+    getFuncNameRE = ' .*\('
+    getFuncNumberRE = '.*:'
+    for line in s:
+        if line == nbs :
+            #allstring = s[3:ctr]
+            allstring = s[3:ctr-1]
+            break
+        else:
+            ctr=ctr+1    
+    #print(allstring)
+    funcNumbers = []
+    funcNames = []
+    funcAddrs = []
+    for line in allstring:
+        fnumber = re.search(getFuncNumberRE, line).group()
+        #print(fnumber)
+        funcNumbers.append(fnumber[:-1])
+        #print(funcNumbers)
+        fname = re.search(getFuncNameRE,line).group()
+        #print (fname)
+        funcNames.append(fname[1:-1])
+        #print(funcNames)
+    #breakAllFunctionsByName(funcNames)
+    for name in funcNames:
+        funcAddrRe= "0x\w+"
+        out = gdb.execute(f'p &{name}',to_string=True).splitlines()
+        for line in out:
+            m = re.search(funcAddrRe,line)
+            try:
+                addr = m.group(0)
+                funcAddrs.append(addr)
+            except:
+                pass        
+        #funcAddrs.append(gdb.execute(f'info address {name}',to_string=True))
+    return funcNames, funcNumbers, funcAddrs
 
-parser = init_argparse()
-args, remaining_args = parser.parse_known_args()
 
-print(args)
-print(args.file_path[:-2])
-programFilePath = ""
-execPath = ""
-if args.file_path:
-    execPath = args.file_path[:-2]
-    programFilePath = args.file_path
-else:
-    print("nothing to do here")
-    programFilePath = "simple_program.c"
-    execPath = "simple_program"
-print(f"execPath: {execPath}")
-#os.popen(f"gdb ./{execPath} -x pythonexec.py")
-#so as long as you quit out of GDB this works
-out = os.popen(f"gdb ./{execPath} -x pythonexec.py")
-
-print (out.read())
-
-out = os.popen('ps').read()
-print(out)
-#program executable name needs inserted below
-c1 = f"ps -C {execPath}"
-c2 = "| awk '{print $1}'"
-c3 = c1+c2
-out = os.popen(f"{c3}").read()
-PID = out[3:].strip()
-
-#myProgram = Program(PID,execPath,programFilePath)
-myProgram = Program()
-myinit(myProgram,pid=32,ex="ex",fpath="fpath")
-print(myProgram.PID)
-
-# #myStack = Stack
-# #myProgram = Program(3)
-# #print(myProgram.PID)
-
-# print("BLAAARAG")
-# funcNames, funcNumbers, funcAddrs = getAllFunctions()
-# breakAllFunctionsByNumber(funcNumbers)
-# gdb.execute('r')
-# #main will always be first
-# locals = gdb.execute('info locals',to_string=True)
-# print(locals)
-# gdb.execute('c')
-# print("~~~~~~~~~~~")
-# #function variables
-# locals = gdb.execute('info locals',to_string=True)
-# print(locals)
-# out = gdb.execute('c',to_string=True)
-# print (f"out: {out}")
-
-# easy path 
-# info functions 
-# set breakpoint for all functions 
-# r 
-# info locals (main)
-# c 
-# info locals (function)
-# . . . 
-# end [Inferior 1 (process <>) exited normally]
-# r (to restart program and do other things)
+def breakAllFunctionsByNumber(funcNumbers):
+    for num in funcNumbers:
+        gdb.execute(f'b {num}')
+    
 
 
 
+def getLocalVariables():
+    #variable names are the first grouping of "words" at the beginning 
+    out = gdb.execute('info locals', to_string = True)
+    localVariableNames = []
+    localVarAddresses = []
+    variableRegex = "^\w+"
+    lines = out.splitlines()
+
+    for line in lines:
+    #print(line)
+        try:
+            m = re.search(variableRegex,line)
+            #print(m.group(0))
+            localVariableNames.append(m.group(0))
+        except:
+            pass
+        #print(variableNames)
 
 
+    for var in localVariableNames:
+        out = gdb.execute(f"print &{var}",to_string = True)
+        #print(out)
+        #this may need to be shortened.
+        v = out[-11:].strip()
+        #print(f"v {v}")
+        localVarAddresses.append(v)
 
+    return localVariableNames, localVarAddresses
 
-# mystack = stack
+def gatherAllVariables():
+    
+    allVariableNames = []
+    allVariableAddresses = []
 
-# addReg("0xffff0004", "test4", mystack)
-# addReg("0xffff0002", "test2", mystack)
-# addReg("0xffff0003", "test3", mystack)
-# addReg("0xffff0001", "test1", mystack)
-# addReg("0xffff0005", "test5", mystack)
-# addReg("0xffff0000", "test0", mystack)
+        #for each function get its variables
+    for i in range(len(funcNames)):
+        try:
+            localVariableNames = []
+            localVarAddresses = []
+            localVariableNames, localVarAddresses = getLocalVariables()
+            #print(allVariableNames, allVariableAddresses)
+            #append local variables to all variables
+            for i in range(len(localVariableNames)):
+                allVariableAddresses.append(localVarAddresses[i])
+                allVariableNames.append(localVariableNames[i])
+                #print(localVariableNames[i], localVarAddresses[i] )
 
-# printRegs(mystack)
+            gdb.execute('c')
+        except:
+            pass
+    return allVariableNames, allVariableAddresses
 
-#this does work but its... wonky 
-#o = os.popen('gdb ./simple_program -x hexstuff.py').read()
+def printAllVars(): 
+    for i in range(len(allVariableNames)):
+        print( allVariableNames[i], allVariableAddresses[i])
 
+def updateVariables(allVariableNames,allVariableAddresses):
+    #for var in allVariableNames:
+    for i in range(len(allVariableNames)):
+        var = allVariableNames[i]
+        try:
+           # print({var})
+            out = gdb.execute(f"print &{var}",to_string = True)
+            #print(out)
+            #either -11 or -9
+            v = out[-9:].strip()
+           # print(f"v {v}")
+            #this should still be fine, because indicies never change for this array
+            #because i'm going to clobber the updated array every time i use it anyway
+            #bad performance but its fine for right now. 
+            
+    #if variables are missing this is probably why.
+    #performance, yes, stability.... TBD
+            if (allVariableAddresses[i] != v):
+                print(f"changing {allVariableNames[i]} {allVariableAddresses[i]} to {v}")
+                allVariableAddresses[i] = v
 
-#sortRegs(mystack)
-#printRegs(mystack)
-#print(mystack.both)
+        except gdb.error:
+            #print(f"{var} not in scope, nothing to do")
+            pass
+    return allVariableNames, allVariableAddresses
+
+def sortTheBigList(regaddrs,reglist):
+    #regaddrs = self.registerAddresses 
+    #reglist = self.registerNames
+    
+    #dont bother sorting if the length is only 1. 
+    #does it even count as an optimization 
+    # if its only ever called once?
+    if(len(regaddrs)==1):
+        pass
+    else:
+        
+        for i in range(len(regaddrs)):
+            for j in range(len(regaddrs)):
+                # < should be the correct direction
+                if int(regaddrs[i],16) < int(regaddrs[j],16):
+                # print(f"swapping: {(regaddrs[i])} with {(regaddrs[j])}")
+                    tmpaddrs = regaddrs[i]
+                    regaddrs[i] = regaddrs[j]
+                    regaddrs[j] = tmpaddrs
+                    templist = reglist[i]
+                    reglist[i] = reglist[j]
+                    reglist[j] = templist
+    return reglist, regaddrs
+
+#~~~~~~~~MAIN~~~~~~~~~~~~#
+gdb.execute('b main')
+gdb.execute('r')
+programExec = "simple_program"
+#firstTimeExecution()
+#def firstTimeExecution():
+PID = getProcessPID(programExec)
+funcNames, funcNumbers, funcAddrs = getAllFunctions()
+breakAllFunctionsByNumber(funcNumbers)
+
+#update variable location 
+#it is important to always run after gathering all variables
+allVariableNames, allVariableAddresses = gatherAllVariables()
+gdb.execute('r')
+
+statTextInfo, statHexInfo = getThingsFromStat(programExec)
+addStatText= []
+addStatHex = []
+
+#need to tweak the things i populate later
+for i in range(len(statHexInfo)):
+  #  print(int(statHexInfo[i],16))
+    #if address < FFFF we dont care to display it
+    #if(int(statHexInfo[i],16) >=65535):
+    if(int(statHexInfo[i],16) >=int("FFFFFF",16)):
+        addStatText.append(statTextInfo[i])
+        addStatHex.append(statHexInfo[i])
+
+reglist, regaddrs = populateRegisters()
+#printRegisters(regaddrs,reglist)
+#sorting does not work 
+li,ad =sortRegisters(reglist,regaddrs)
+#printRegisters(ad,li)
+
+heapStart, heapEnd, stackStart, stackEnd = getHeapStack(programExec)
+allVariableNames, allVariableAddresses = updateVariables(allVariableNames,allVariableAddresses)
+
+def printPair(names,addrs):
+    for i in range(len(names)):
+        print(f"{names[i]} {addrs[i]}")
+
+#print(statTextInfo)
+#print(addStatText)
+
+#general update sequence 
+for i in range(5):
+    bigListNames = []
+    bigListNames.append("heapStart")
+    bigListNames.append("heapEnd")
+    bigListNames.append("stackStart")
+    bigListNames.append("stackEnd")
+
+    bigListAddrs = []
+    try:
+        #location of the heap
+        heapStart, heapEnd, stackStart, stackEnd = getHeapStack(programExec)
+        bigListAddrs.append(heapStart)
+        bigListAddrs.append(heapEnd)
+        bigListAddrs.append(stackStart)
+        bigListAddrs.append(stackEnd)
+        #function addresses needs updating for sure
+        # funcAddrs = getFuncAddrs(funcNames)
+        # for i in range(len(funcNames)):
+        #     bigListNames.append(funcNames[i])
+        #     bigListAddrs.append(funcAddrs[i])
+        #variables 
+        varNames, varAddrs = updateVariables(allVariableNames,allVariableAddresses)
+        for i in range(len(varNames)):
+            bigListNames.append(varNames[i])
+            bigListAddrs.append(varAddrs[i])
+        #registers
+        reglist, regaddrs = populateRegisters()
+        for i in range(len(varNames)):
+            bigListNames.append(reglist[i])
+            bigListAddrs.append(regaddrs[i])
+        statTextInfo, statHexInfo = getThingsFromStat(programExec)
+        for i in range(len(statTextInfo)):
+            bigListNames.append(statTextInfo[i])
+            bigListAddrs.append(statHexInfo[i])
+        gdb.execute('n')
+        print("~~~~~~~~THE BIG PRINT1~~~~~~~~``")
+        sortedNames,sortedAddrs = sortTheBigList(bigListAddrs,bigListNames)
+        printPair(sortedNames,sortedAddrs)
+    except:
+        pass
+    
+    #printPair(bigListNames,bigListAddrs)
+
+#     print("~~~~heapstack~~~")
+#     print(heapStart, heapEnd, stackStart, stackEnd)
+#     updateVariables()
+#     printAllVars()
+#    gdb.execute('n')
+
+    #localVarAddresses.append(v)
+  
+#gdb.execute('c')
+#getLocalVariables()

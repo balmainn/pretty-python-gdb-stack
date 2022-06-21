@@ -3,6 +3,7 @@
 #oh the jank is bad with this one. 
 import os
 import re
+SAFE = 1
 #remove the executable file 
 #os.popen('rm -f pythonexec.py')
 #os.popen('touch pythonexec.py')
@@ -10,8 +11,8 @@ import re
 if os.path.exists("pythonexec.py"):
     os.remove("pythonexec.py")
 
-#fileslist = ["heapclass.py","stackclass.py","programclass.py","functions.py","stackmain.py"]
-fileslist = ["heapclass.py","stackclass.py","programclass.py","functions.py"]
+fileslist = ["heapclass.py","stackclass.py","programclass.py","functions.py","stackmain.py"]
+#fileslist = ["heapclass.py","stackclass.py","programclass.py","functions.py"]
 #fileslist = ["programclass.py","stackmain.py"]
 importRegex = "from \w+ import "
 lines = []
@@ -45,4 +46,5 @@ with open('pythonexec.py','w') as f:
         #print(f"writing: {line}")
         f.write(line)
     #f.writelines(lines)
-    f.write("gdb.execute('q')")
+    if(SAFE):
+        f.write("gdb.execute('q')")
