@@ -168,92 +168,11 @@ def sortTheBigList(regaddrs,reglist):
     return reglist, regaddrs
 
 #~~~~~~~~MAIN~~~~~~~~~~~~#
-gdb.execute('b main')
-gdb.execute('r')
-programExec = "simple_program"
-#firstTimeExecution()
-#def firstTimeExecution():
-PID = getProcessPID(programExec)
-funcNames, funcNumbers, funcAddrs = getAllFunctions()
-breakAllFunctionsByNumber(funcNumbers)
+# gdb.execute('b main')
+# gdb.execute('r')
+# programExec = "simple_program"
 
-#update variable location 
-#it is important to always run after gathering all variables
-allVariableNames, allVariableAddresses = gatherAllVariables()
-gdb.execute('r')
-
-statTextInfo, statHexInfo = getThingsFromStat(programExec)
-addStatText= []
-addStatHex = []
-
-#need to tweak the things i populate later
-for i in range(len(statHexInfo)):
-  #  print(int(statHexInfo[i],16))
-    #if address < FFFF we dont care to display it
-    #if(int(statHexInfo[i],16) >=65535):
-    if(int(statHexInfo[i],16) >=int("FFFFFF",16)):
-        addStatText.append(statTextInfo[i])
-        addStatHex.append(statHexInfo[i])
-
-reglist, regaddrs = populateRegisters()
-#printRegisters(regaddrs,reglist)
-#sorting does not work 
-li,ad =sortRegisters(reglist,regaddrs)
-#printRegisters(ad,li)
-
-heapStart, heapEnd, stackStart, stackEnd = getHeapStack(programExec)
-allVariableNames, allVariableAddresses = updateVariables(allVariableNames,allVariableAddresses)
 
 def printPair(names,addrs):
     for i in range(len(names)):
         print(f"{names[i]} {addrs[i]}")
-
-#print(statTextInfo)
-#print(addStatText)
-
-#general update sequence 
-for i in range(5):
-    bigListNames = []
-    bigListNames.append("heapStart")
-    bigListNames.append("heapEnd")
-    bigListNames.append("stackStart")
-    bigListNames.append("stackEnd")
-
-    bigListAddrs = []
-    try:
-        #location of the heap
-        heapStart, heapEnd, stackStart, stackEnd = getHeapStack(programExec)
-        bigListAddrs.append(heapStart)
-        bigListAddrs.append(heapEnd)
-        bigListAddrs.append(stackStart)
-        bigListAddrs.append(stackEnd)
-        #function addresses needs updating for sure
-        # funcAddrs = getFuncAddrs(funcNames)
-        # for i in range(len(funcNames)):
-        #     bigListNames.append(funcNames[i])
-        #     bigListAddrs.append(funcAddrs[i])
-        #variables 
-        #maybe get local variables instead.????
-        varNames, varAddrs = updateVariables(allVariableNames,allVariableAddresses)
-        
-        for i in range(len(varNames)):
-            bigListNames.append("v: " +varNames[i])
-            bigListAddrs.append(varAddrs[i])
-        #registers
-        reglist, regaddrs = populateRegisters()
-        for i in range(len(varNames)):
-            bigListNames.append("r: "+reglist[i])
-            bigListAddrs.append(regaddrs[i])
-        statTextInfo, statHexInfo = getThingsFromStat(programExec)
-        for i in range(len(statTextInfo)):
-            bigListNames.append("i: "+statTextInfo[i])
-            bigListAddrs.append(statHexInfo[i])
-        gdb.execute('n')
-        print("~~~~~~~~THE BIG PRINT1~~~~~~~~``")
-        sortedNames,sortedAddrs = sortTheBigList(bigListAddrs,bigListNames)
-        printPair(sortedNames,sortedAddrs)
-    except:
-        pass
-
-#THINGS TO DO
-#get data from variables. yeah thats important 

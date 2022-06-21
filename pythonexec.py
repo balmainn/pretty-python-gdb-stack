@@ -548,16 +548,16 @@ for i in range(5):
         #variables 
         varNames, varAddrs = updateVariables(allVariableNames,allVariableAddresses)
         for i in range(len(varNames)):
-            bigListNames.append(varNames[i])
+            bigListNames.append("v: " +varNames[i])
             bigListAddrs.append(varAddrs[i])
         #registers
         reglist, regaddrs = populateRegisters()
         for i in range(len(varNames)):
-            bigListNames.append(reglist[i])
+            bigListNames.append("r: "+reglist[i])
             bigListAddrs.append(regaddrs[i])
         statTextInfo, statHexInfo = getThingsFromStat(programExec)
         for i in range(len(statTextInfo)):
-            bigListNames.append(statTextInfo[i])
+            bigListNames.append("i: "+statTextInfo[i])
             bigListAddrs.append(statHexInfo[i])
         gdb.execute('n')
         print("~~~~~~~~THE BIG PRINT1~~~~~~~~``")
