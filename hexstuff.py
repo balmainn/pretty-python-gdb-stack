@@ -1,5 +1,4 @@
 
-from atexit import register
 from types import *
 from appJar import gui 
 import math
@@ -16,6 +15,61 @@ def printRegisters(regaddrs, reglist):
     for i in range (len(regaddrs)):
         print(f"{regaddrs[i]} {reglist[i]}")
 
+
+#get the stack and the heap approximate locations
+#from /proc/<pid/maps
+#input is this file as a string (os.popen(...).read())
+def getProcessPID(process):
+    c1 = f"ps -C {process}"
+    c2 = "| awk '{print $1}'"
+    c3 = c1+c2
+    out = os.popen(f"{c3}").read()
+    PID = out[3:].strip()
+    return PID
+def getProcessPID(process):
+    c1 = f"ps -C {process}"
+    c2 = "| awk '{print $1}'"
+    c3 = c1+c2
+    out = os.popen(f"{c3}").read()
+    PID = out[3:].strip()
+    return PID
+def getHeapStack(process):
+    PID = getProcessPID(process)
+    mapString= os.popen(f'cat /proc/{PID}/maps').read()
+    heap_stack_regex = ".+\[heap\]|.+\[stack\]"
+    arr = mapString.splitlines()
+    heapStart = ""
+    heapEnd = ""
+    stackStart = ""
+    stackEnd = ""
+    for line in arr:
+        m = re.search(heap_stack_regex,line)
+        if(type(m) == re.Match):
+            #print(type(m))
+            #print(line)
+            #avoid problems with grouping nonetype
+            try:
+                heapOrStack= m.group(0)
+            #    print(f"last chars: {heapOrStack[-3:]}")
+            #    print(f"mgroups0: {m.group(0)}")
+                if(heapOrStack[-3:] =="ap]"):
+                    #print("this is a heap")
+                    heapStart = heapOrStack[:8]
+                    heapEnd = heapOrStack[9:18]
+                #    print(f"heapstart: {heapOrStack[:8]}")
+                #    print(f"heapend: {heapOrStack[9:18]}")
+                else:
+                    stackStart = heapOrStack[:8]
+                    stackEnd = heapOrStack[9:18]
+                #    print(f"stack: {heapOrStack[:8]}")
+                #    print(f"stackend: {heapOrStack[9:18]}")
+                    #print("this is a stack")
+            #these contain no errors we're looking for    
+            except:
+                pass
+    print(f"heap: {heapStart} to {heapEnd}\nstack: {stackStart} to {stackEnd}")
+    return heapStart, heapEnd, stackStart, stackEnd
+
 #eventually give this thing an argument to the program file we are running
 #just use PIDOF built in linux thing. come back and fix this later. 
 #also can use cat /proc/<PID>/stat | awk '{print $28}' 
@@ -23,41 +77,8 @@ def printRegisters(regaddrs, reglist):
 def getStackAddressEnd():
     #program we are getting the PID and approximate stack address of
     program = 'simple_program'
-    
-    #regex needed for this to work. 
-    #get the line containing the pid for our program based on ps
-    regex = f"\d+ pts.0 +..:..:.. {program}"
-    #get just the pid
-    regex2 = "\d+ "
-    #get the line containing "stack"
-    stackregex = "\w+-\w+ +\w+-+\w+ \d+ \d+:\d+ \d+ +\[stack]"
-    #get the max stack address range (because stack randomization is a thing)
-    stackAddressRegex = "-\w\w\w\w\w\w+"
-    #use the os to run ps
-    out = os.popen('ps').read()
-    #search ps output for line 
-    m = re.search(regex,out)
-    #search the regex of ps for just the PID
-    m2 = re.search(regex2,m.group(0))
-    
-    #process id for the program 
-    procid = m2.group(0)
-    #strip away those spaces that cause problems in filepaths
-    procnospace = procid.strip()
-    
-    #get stuff from the process map 
-    out = os.popen(f"cat /proc/{procnospace}/maps").read()
-    #get the line containting [stack]    
-    m = re.search(stackregex,out)
-    
-    #get the approximtae max stack address range
-    m2 = re.search(stackAddressRegex,m.group(0))
-    #the approximate max stack address. then get rid of the -
-    ss= m2.group(0)
-    s2 = ss.strip('-')
-    #print(s2)
-    
-    return int(s2,16)
+    heapStart,heapEnd, stackStart, stackEnd = getHeapStack(program)
+    return int(stackEnd,16)
 
 #returns addrs regslist 
 def populateRegisters():
