@@ -1,7 +1,6 @@
 # # #https://www.pythonguis.com/tutorials/pyqt6-layouts/
 
 
-
 from PyQt6.QtWidgets import (
       QApplication, QVBoxLayout, QWidget, QLabel, QPushButton
 )
@@ -37,10 +36,10 @@ class Window(QWidget):
         print(self.label.text())
          
  
-app = QApplication(sys.argv)
-window = Window()
-window.show()
-sys.exit(app.exec())
+# app = QApplication(sys.argv)
+# window = Window()
+# window.show()
+# sys.exit(app.exec())
 
 
 
