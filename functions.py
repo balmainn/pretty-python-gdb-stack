@@ -199,3 +199,15 @@ def sortRegisters(reglist,regaddrs):
     print("~~~~~~~~~~~~~~")
     printRegisters(regaddrs, reglist)
     return reglist, regaddrs
+
+
+class test (gdb.Command):
+    """user defined gdb command"""
+    def __init__(self):
+                                 #cmd user types in goeshere
+        super(test,self).__init__("test",gdb.COMMAND_USER)
+    #this is what happens when they type in the command     
+    def invoke(self, arg, from_tty):
+        print("HELLO FROM TEST")
+        gdb.execute("source display.py")
+test() 

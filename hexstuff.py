@@ -22,6 +22,13 @@ def printRegisters(regaddrs, reglist):
 #the 28th field of this is the start of the stack.
 def getStackAddressEnd():
     #program we are getting the PID and approximate stack address of
+        #get filename with the code below 
+        #  gdb.execute("b main")
+        # gdb.execute("r")
+        # out = gdb.execute("info line",to_string = True)
+        # fileregex = "\".+\""
+        # m = re.search(fileregex,out)
+        # filename = m.group(0).strip("\"" )
     program = 'simple_program'
     
     #regex needed for this to work. 
