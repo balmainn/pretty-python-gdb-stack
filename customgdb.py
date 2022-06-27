@@ -14,6 +14,29 @@ class getpid (gdb.Command):
         getpidpy()
 getpid() 
 
+class argtest (gdb.Command):
+    """user defined gdb command"""
+    def __init__(self):
+                                 #cmd user types in goeshere
+        super(argtest,self).__init__("argtest",gdb.COMMAND_USER)
+    #this is what happens when they type in the command     
+    def invoke(self, arg, from_tty):
+        print(arg)
+        print(from_tty)
+argtest() 
+class agt (gdb.Command):
+    """user defined gdb command"""
+    def __init__(self):
+                                 #cmd user types in goeshere
+        super(agt,self).__init__("agt",gdb.COMMAND_USER)
+    #this is what happens when they type in the command     
+    def invoke(self, arg, from_tty):
+        gdb.execute(f'argtest, {arg}')
+agt() 
+#calling argtest from argt doesnt do anything (becaues it doesnt do anything)
+#but calling it with gdb.execute the args do get passed 
+#also from_tty is false instead of true when calling directly 
+
 def getpidpy():
     out = gdb.execute('info proc files',to_string = True)
     print(out[8:-1])

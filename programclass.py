@@ -1,6 +1,30 @@
-#from stackclass import * 
-#from heapclass import *
+#start conventionalizing
+#NAME GOES FIRST THEN ADDRESS 
+
+from inspect import _void
 import re 
+class Heap:
+    heapRegisterAddresses =  []
+    heapRegisterNames = []
+    heapBoth = [heapRegisterAddresses,heapRegisterNames]
+
+class Stack:
+    def __init__(self) -> None:
+            
+        self.stackRegisterAddresses =  []
+        self.stackRegisterNames = []
+        self.both = [self.stackRegisterAddresses,self.stackRegisterNames]
+        
+        self.dataStart = 0
+        self.dataEnd = 0
+        self.bottomOfStack = "0x00000000"
+        
+    def addReg(self, regAddress, regName):
+        
+        self.stackRegisterAddresses.append(regAddress)
+        self.stackRegisterNames.append(regName)
+        
+    
 class resource (gdb.Command):
     """user defined gdb command"""
     def __init__(self):
@@ -11,43 +35,116 @@ class resource (gdb.Command):
         gdb.execute("source programclass.py")
 resource() 
 
+class Func:
+
+    def __init__(self):
+        self.functionsName = []
+        self.functionsLine = []
+        self.functionsAddr = []
+        self.funcInfo = [self.functionsName,self.functionsLine,self.functionsAddr]
+
+
+    def getAllFunctions(self):
+        o = gdb.execute('info functions', to_string = True)
+        s = o.splitlines()
+        #print(s)
+        nbs = 'Non-debugging symbols:'
+        ctr = 0
+        getFuncNameRE = ' .*\('
+        getFuncNumberRE = '.*:'
+        for line in s:
+            if line == nbs :
+                #allstring = s[3:ctr]
+                allstring = s[3:ctr-1]
+                break
+            else:
+                ctr=ctr+1    
+        print(allstring)
+        funcNumbers = []
+        funcNames = []
+        funcAddrs = []
+        for line in allstring:
+            fnumber = re.search(getFuncNumberRE, line).group()
+            #print(fnumber)
+            funcNumbers.append(fnumber[:-1])
+            #print(funcNumbers)
+            fname = re.search(getFuncNameRE,line).group()
+            #print (fname)
+            funcNames.append(fname[1:-1])
+            #print(funcNames)
+        #breakAllFunctionsByName(funcNames)
+        funcAddrs = self.getFuncAddrs(funcNames)
+        print("func addrs: ",funcAddrs)
+        return funcNames, funcNumbers, funcAddrs
+    def getFuncAddrs(self,funcNames):
+        funcAddrs = []
+        for name in funcNames:
+            out = gdb.execute(f'info address {name}',to_string=True)
+        
+            m = re.search("0x\d+",out)
+            print("Mgroup: ", m.group(0))
+            funcAddrs.append(m.group(0))
+            print(f"name: {name} out: {out}")
+        print("funcaddrs:", funcAddrs)
+        return funcAddrs
+    def populateFunctions(self):
+        self.functionsName, self.functionsLine,  self.functionsAddr = self.getAllFunctions()
+        self.funcInfo = [self.functionsName,self.functionsLine,self.functionsAddr]
+        print("populated: ", self.functionsName, self.functionsLine,  self.functionsAddr) 
 class Program:
 
     def __init__(self):   
         self.executable =""
         self.filepath = ""
         #PID = getPID()
-       # self.programStack = Stack
-        #self.programHeap = Heap
+        self.programStack = Stack()
+        self.programHeap = Heap()
+        self.programFuncs = Func()
         #arrray of functions... 
-        self.programFuncs = []
+        
         self.PID = 0
         self.variableNames = []
         self.variableAddresses = []
+        self.variableBoth = [self.variableNames,self.variableAddresses]
         
         self.dataStart = 0
         self.dataEnd = 0
         self.bottomOfStack = "0x00000000"
+        #this might be a bad idea...
+        #sizes [2], [2], [3], [3]
+        self.everything = [ [self.programHeap.heapBoth], [self.programStack.both], [self.programFuncs.functionsAddr], [self.variableBoth]   ]
         print("__init__")
+        self.getPID()
+        self.getProgramFilePath()
+    def getProgramFilePath(self):
+        out = gdb.execute("info line",to_string = True)
+        fileregex = "\".+\""
+        m = re.search(fileregex,out)
+        filename = m.group(0).strip("\"" )
+        #print(filename)
+        #print(filename[0:-2])
+        self.filepath = filename
+        self.executable = filename[0:-2]
+        
+    def getPID(self):
+        gdb.execute('b main')
+        gdb.execute('r')
+        out = gdb.execute('info proc files',to_string = True)
+        print(out[8:-1])
+        pid = out[8:-1]
+        self.PID = pid
 
-def myinit(program,pid,ex,fpath):
-    program.PID = pid
-    program.executable = ex
-    program.filepath = fpath
-class func:
-    functionsName = []
-    functionsLine = []
-    functionsAddr = []
-    funcInfo = [functionsName,functionsLine,functionsAddr]
+class Variable:
+    varName = ""
+    varData = None
+    varAddr = ""
 
-def getVariables():
-    pass
+#define like this for ease of use later
+myProgram = Program()
+myProgramStack = myProgram.programStack
+myProgramHeap = myProgram.programHeap
+myProgramFunctions = myProgram.programFuncs
 
-
-
-
-p = Program()
-print(p.PID)
 gdb.execute('b main')
 gdb.execute('r')
 registers = gdb.execute('info registers',to_string = True)
@@ -132,17 +229,54 @@ def getFrameInfo():
         frameRegNames.append("previous_sp")
     printRegisters(frameRegs,frameRegNames)
     return frameRegs, frameRegNames
-    #get names with e\D\D
-    #frame_stack_eip 
-    # for i in range(len(frameArr)):
-    #     print(i, frameArr[i])
-    
-    #make these lables frame_regName
 
-for i in range(5):
-    getFrameInfo()
-    gdb.execute('n')
+myProgram.programStack.addReg(regaddrs[0],reglist[0])
+myProgramStack.addReg(regaddrs[1],reglist[1])
+print(myProgram.programStack.both)
+print(myProgramStack.both)
 
+#python really doesnt care about variable typing...
+v = Variable()
+v.varAddr = "0xffffcccc"
+v.varName = "variable"
+v.varData = 3
+v.varData = "now i'm a string"
+v.varName = 2
+print(v.varAddr,v.varName,v.varData)
+
+gdb.execute('r')
+myProgramFunctions.populateFunctions()
+print(myProgramFunctions.funcInfo)
+print(myProgramFunctions.functionsAddr)
+print(myProgramFunctions.functionsLine)
+print(myProgramFunctions.functionsName)
+# for i in range(5):
+#     getFrameInfo()
+#     gdb.execute('n')
+#check the exception
+class isGDBRunning (gdb.Command):
+    """figure out if gdb is running or not"""
+    def __init__(self):
+                                 #cmd user types in goeshere
+        super(isGDBRunning,self).__init__("amirunning",gdb.COMMAND_USER)
+    #this is what happens when they type in the command     
+    def invoke(self, arg, from_tty):
+        try:
+            out =gdb.execute('info registers',to_string=True)
+            print( out[-1])
+            if out[-1] == 'w':
+                print("not running")
+            else:
+                print("i am running")
+        except gdb.error:
+            print("some error probably fine")
+isGDBRunning()
+def isGDBRunningpy():
+    out = gdb.execute('info line',to_string=True)
+    if (out[0] == 'N'):
+        return False
+    else:
+        return True
 """
 get variables by running info locals at 
 the beginning of each function (including main)
