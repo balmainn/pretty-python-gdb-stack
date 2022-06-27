@@ -23,7 +23,31 @@ class Stack:
         
         self.stackRegisterAddresses.append(regAddress)
         self.stackRegisterNames.append(regName)
-        
+    def sortRegs(self):
+        regaddrs = self.both[0]
+        reglist = self.both[1]
+        for i in range(len(regaddrs)):
+            for j in range(len(regaddrs)):
+                # < should be the correct direction
+                if int(regaddrs[i],16) < int(regaddrs[j],16):
+                # print(f"swapping: {(regaddrs[i])} with {(regaddrs[j])}")
+                    tmpaddrs = regaddrs[i]
+                    regaddrs[i] = regaddrs[j]
+                    regaddrs[j] = tmpaddrs
+                    templist = reglist[i]
+                    reglist[i] = reglist[j]
+                    reglist[j] = templist
+        self.both.clear()
+        self.both = [regaddrs,reglist]
+    def printAll(self):
+        print("printing stack")
+        for s in self.both:
+            print(s)
+        self.sortRegs()
+        print("sorted stack")
+        for s in self.both:
+            print(s)
+    
     
 class resource (gdb.Command):
     """user defined gdb command"""
@@ -277,6 +301,10 @@ def isGDBRunningpy():
         return False
     else:
         return True
+
+def printObject(obj):
+    obj.printAll()
+printObject(myProgramStack)
 """
 get variables by running info locals at 
 the beginning of each function (including main)
