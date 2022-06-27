@@ -29,12 +29,65 @@ class resource (gdb.Command):
 resource() 
 
 
+class getpid (gdb.Command):
+    """user defined gdb command"""
+    def __init__(self):
+                                 #cmd user types in goeshere
+        super(getpid,self).__init__("getpid",gdb.COMMAND_USER)
+    #this is what happens when they type in the command     
+    def invoke(self, arg, from_tty):
+        out = gdb.execute('info proc',to_string = True)
+        arr = out.splitlines()
+        print(arr[0])
+getpid() 
+
+
+
+
 from PyQt6.QtWidgets import (
-      QApplication, QVBoxLayout, QWidget, QLabel, QPushButton
+      QApplication, QVBoxLayout, QWidget, QLabel, QPushButton, QLineEdit, QMainWindow
 )
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import *
+from  PyQt6 import *
 import sys
  
+class PrintWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        
+        # self.left=50
+        # self.top=50
+        # self.width=300
+        # self.height=300
+        self.initUI()
+        textStorage = ""
+
+    def initUI(self):
+
+        #self.setGeometry(self.left,self.top,self.width,self.height)
+        layout = QVBoxLayout()
+        self.line_edit1 = QLineEdit(self)
+        #self.line_edit1.move(50, 50)
+        self.line_edit1.returnPressed.connect(self.on_line_edit1_returnPressed)
+
+        self.line_edit2 = QLabel(self)
+        self.line_edit2.move(50, 100)
+        layout.addWidget(self.line_edit1)
+        layout.addWidget(self.line_edit2)
+        self.show()
+    def updateGDB(self):
+        text = self.textStorage
+        out = gdb.execute(text,to_string =True)
+        self.line_edit2.setText(out)
+
+    def on_line_edit1_returnPressed(self):
+        self.textStorage = self.line_edit1.text()
+        self.line_edit1.setText("")
+        #self.line_edit1.setText(self.line_edit1.text())
+        self.updateGDB()
+        print(self.textStorage)
+    
+
 class Window(QWidget):
     def __init__(self):
         super().__init__()
@@ -45,7 +98,7 @@ class Window(QWidget):
         self.setLayout(layout)
  
         self.label = QLabel("Old Text")
-        self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.label.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.label.adjustSize()
         layout.addWidget(self.label)
  
@@ -60,7 +113,9 @@ class Window(QWidget):
         button = QPushButton("resource")
         button.clicked.connect(self.res)
         layout.addWidget(button)
- 
+       
+
+  
     def update(self):
         filename = "lab01/tracer1a.c"
         with open(filename,'r') as f:
@@ -79,8 +134,8 @@ class Window(QWidget):
         resource()
 
 app = QApplication(sys.argv)
-window = Window()
-window.show()
+window = PrintWindow()
+#window.show()
 sys.exit(app.exec())
 
 

@@ -3,6 +3,45 @@
 #https://cs.brown.edu/courses/cs033/docs/guides/gdb.pdf
 import re
 
+
+class getpid (gdb.Command):
+    """user defined gdb command"""
+    def __init__(self):
+                                 #cmd user types in goeshere
+        super(getpid,self).__init__("getpid",gdb.COMMAND_USER)
+    #this is what happens when they type in the command     
+    def invoke(self, arg, from_tty):
+        getpidpy()
+getpid() 
+
+def getpidpy():
+    out = gdb.execute('info proc files',to_string = True)
+    print(out[8:-1])
+    pid = out[8:-1]
+    return pid
+
+class test (gdb.Command):
+    """user defined gdb command"""
+    def __init__(self):
+                                 #cmd user types in goeshere
+        super(test,self).__init__("test",gdb.COMMAND_USER)
+    #this is what happens when they type in the command     
+    def invoke(self, arg, from_tty):
+        pid = getpidpy()
+        print("pid from test: ", pid)
+test() 
+
+
+class showcode (gdb.Command):
+    """user defined gdb command"""
+    def __init__(self):
+                                 #cmd user types in goeshere
+        super(showcode,self).__init__("showcode",gdb.COMMAND_USER)
+    #this is what happens when they type in the command     
+    def invoke(self, arg, from_tty):
+       gdb.execute('tui enable')
+       gdb.execute('tui')
+showcode()
 class resource (gdb.Command):
     """user defined gdb command"""
     def __init__(self):
