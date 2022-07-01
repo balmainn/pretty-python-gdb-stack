@@ -5,6 +5,9 @@
 # get/print everything 
 # send it to GUI for nice picture 
 import re
+import os
+
+from black import mypyc_attr
 
 class Heap:
     def __init__(self) -> None:
@@ -140,7 +143,7 @@ class Stack:
         #test print
         #print(self.stackRegisterAddresses,self.stackRegisterNames)
         #self.printAll()
-        print("everything added")
+        #print("everything added")
     def getFrameInfo(self):
         eip_savedEip_regex = "0x\w+"
         frameStr = gdb.execute('info frame', to_string = True)
@@ -199,6 +202,9 @@ class Stack:
             frameRegs.append(previous_sp)
             frameRegNames.append("previous_sp")
         printRegisters(frameRegNames,frameRegs)
+        # for i in range(len(frameRegNames)):
+        #     print(f"{i} {frameRegNames[i]} {frameRegs[i]}")
+        #     self.addReg(frameRegNames[i],frameRegs[i])
         return frameRegNames, frameRegs
     
 class resource (gdb.Command):
@@ -318,10 +324,21 @@ class Program:
         self.variableNames = []
         self.variableAddresses = []
         self.variableBoth = [self.variableNames,self.variableAddresses]
-        
+        #things from proc/<pid>/stat
         self.dataStart = 0
         self.dataEnd = 0
         self.bottomOfStack = "0x00000000"
+        self.argstart = 0
+        self.argend = 0
+        self.heapexpand = 0
+        self.statHexInfo = []
+        self.statWhatInfo = []
+
+        #from proc/<pid>/maps
+        self.mapHeapBottom = 0 
+        self.mapHeapTop = 0 
+        self.mapStackBottom = 0
+        self.mapStackTop = 0
         #this might be a bad idea...
         #sizes [2], [2], [3], [3]
         self.everything = [ [self.programHeap.heapBoth], [self.programStack.both], [self.programFuncs.functionsAddr], [self.variableBoth]   ]
@@ -350,7 +367,97 @@ class Program:
         #sort these methods
         self.everything = [ [self.programHeap.heapBoth], [self.programStack.both], [self.programFuncs.functionsAddr], [self.variableBoth]   ]
 
+    def getThingsFromStat(self):
+        
+        procnospace = isGDBRunningpy()
+        if(not procnospace):
+            print("gdb is not running, please run before using this function")
+            return
+        useful_stack_info = [23,26,27,28,29,30,45,46,47,48,49,50,51,52]
+        whatInfo = ["vsize","startcode","endcode", "startStack", "currentESP", "currentEIP", "startData", "endData", "heapExpand", "argStart", "argEnd", "EnvStart", "EnvEnd", "ExitCode"]
+        info = []
+        hexinfo = []
+        command1 = f"cat /proc/{procnospace}/stat | awk "
+        command2 = "\' {print "
+        #initialize to #26 for no reason
+        command3 = f"${useful_stack_info[1]}"    
+        command4 = " } \' "
+        command_out = command1 + command2 +command3 +command4 
+        #print(command_out)
+        for location in useful_stack_info:
+            command3 = f"${location}" 
+            command_out = command1 + command2 +command3 +command4 
+            statout = ( (os.popen(f"{command_out}").read()).strip('\n') )
+            info.append(statout)
+            h = hex(int(statout))
+            hexinfo.append(h)
+        
+        #or i in range(len(whatInfo)):
+         #   print(f"{i} {whatInfo[i]} {info[i]} {hexinfo[i]}")
+        self.bottomOfStack = hexinfo[3]
+        self.dataStart = hexinfo[6]
+        self.dataEnd = hexinfo[7]
+        self.heapexpand = hexinfo[8]
+        self.argstart = hexinfo[9]
+        self.argend = hexinfo[10]
+        
+        #print(self.bottomOfStack,self.dataStart, self.dataEnd, self.heapexpand, self.argstart,self.argend)
+        self.statHexInfo = hexinfo 
+        self.statWhatInfo = whatInfo
+        #return whatInfo, hexinfo
+        #print(f"info: {info}")
 
+    def printStatInfo(self):
+        for i in range(len(self.statHexInfo)):
+            print(f"{i} {self.statWhatInfo[i]} {self.statHexInfo[i]}")
+
+    def getStackHeapRangeFromMaps(self):
+        PID = isGDBRunningpy()
+        if(not PID):
+            print("gdb is not running, please run before using this function")
+            return
+        mapString= os.popen(f'cat /proc/{PID}/maps').read()
+        heap_stack_regex = ".+\[heap\]|.+\[stack\]"
+        arr = mapString.splitlines()
+        heapStart = ""
+        heapEnd = ""
+        stackStart = ""
+        stackEnd = ""
+        for line in arr:
+            m = re.search(heap_stack_regex,line)
+            if(type(m) == re.Match):
+                #print(type(m))
+                #print(line)
+                #avoid problems with grouping nonetype
+                try:
+                    heapOrStack= m.group(0)
+                #    print(f"last chars: {heapOrStack[-3:]}")
+                #    print(f"mgroups0: {m.group(0)}")
+                    if(heapOrStack[-3:] =="ap]"):
+                        #print("this is a heap")
+                        heapStart = '0x'+heapOrStack[:8]
+                        heapEnd = '0x'+heapOrStack[9:18]
+                        #print(f"heapstart: {heapOrStack[:8]}")
+                    #   print(f"heapend: {heapOrStack[9:18]}")
+                    else:
+                        stackStart = '0x'+heapOrStack[:8]
+                        stackEnd = '0x'+heapOrStack[9:18]
+                    #    print(f"stack: {heapOrStack[:8]}")
+                    #    print(f"stackend: {heapOrStack[9:18]}")
+                        #print("this is a stack")
+                #these contain no errors we're looking for    
+                except:
+                    pass
+        print(f"heap: {heapStart} to {heapEnd}\nstack: {stackStart} to {stackEnd}")
+        #return heapStart, heapEnd, stackStart, stackEnd
+        self.mapStackBottom = stackEnd
+        self.mapStackTop = stackStart
+        self.mapHeapBottom = heapEnd
+        self.mapHeapTop = heapStart
+    def printStackHeapRange(self):
+        print(f'heap: {self.mapHeapTop} - {self.mapHeapBottom}')
+        print(f'stack: {self.mapStackTop} - {self.mapStackBottom}')
+        print(f'fromstat: stackbottom: {self.bottomOfStack}')
 #variables of a program
 class Variables:
     def __init__(self):  
@@ -517,17 +624,88 @@ class pvars (gdb.Command):
         super(pvars,self).__init__("pvars",gdb.COMMAND_USER)
     #this is what happens when they type in the command     
     def invoke(self, arg, from_tty):
-        print("invoking pvars")
-        myProgramVariables.getLocalVariables()
-        myProgramVariables.printAll()
-        myProgramVariables.sort()
-        myProgramVariables.printAll()
+        if(isGDBRunningpy()):
+            print("invoking pvars")
+            myProgramVariables.getLocalVariables()
+            if(from_tty):
+                myProgramVariables.printAll()
+            #myProgramVariables.sort()
+            #myProgramVariables.printAll()
+        else:
+            print("not debugging, please run before using.")
 pvars() 
 
 def printObject(obj):
     obj.printAll()
 
+class pstat (gdb.Command):
+    """user defined gdb command"""
+    def __init__(self):
+                                 #cmd user types in goeshere
+        super(pstat,self).__init__("pstat",gdb.COMMAND_USER)
+    #this is what happens when they type in the command     
+    def invoke(self, arg, from_tty):
+        print("invoking pstat")
+        myProgram.getThingsFromStat()
+        if(from_tty):
+            myProgram.printStatInfo()
+pstat() 
 
+class pmaps (gdb.Command):
+    """user defined gdb command"""
+    def __init__(self):
+                                 #cmd user types in goeshere
+        super(pmaps,self).__init__("pmaps",gdb.COMMAND_USER)
+    #this is what happens when they type in the command     
+    def invoke(self, arg, from_tty):
+        print("invoking pmaps")
+        myProgram.getStackHeapRangeFromMaps()
+        if(from_tty):
+            myProgram.printStackHeapRange()
+        
+pmaps() 
+
+class pprogram (gdb.Command):
+    """user defined gdb command"""
+    def __init__(self):
+                                 #cmd user types in goeshere
+        super(pprogram,self).__init__("pprogram",gdb.COMMAND_USER)
+    #this is what happens when they type in the command     
+    def invoke(self, arg, from_tty):
+        print("invoking pprogram")
+        # print(vars(myProgram))
+        # print(vars(myProgramStack))
+        # print(vars(myProgramFunctions))
+        # print(vars(myProgramVariables))
+        print(myProgram.PID)
+        print((gdb.selected_inferior()))
+pprogram() 
+
+#need to do something with this rethere
+class isGDBRunning (gdb.Command):
+    """figure out if gdb is running or not"""
+    def __init__(self):
+                                 #cmd user types in goeshere
+        super(isGDBRunning,self).__init__("amirunning",gdb.COMMAND_USER)
+    #this is what happens when they type in the command     
+    def invoke(self, arg, from_tty):
+        pid =  (gdb.selected_inferior().pid)
+        if(pid<=0):
+            print("i am not running")
+            return 0
+        else:
+            print(f"i am running, my pid is: {pid}")
+            return 1
+isGDBRunning()
+
+def isGDBRunningpy():
+        pid =  (gdb.selected_inferior().pid)
+        if(pid<=0):
+            print("i am not running")
+            return 0
+        else:
+            print(f"i am running, my pid is: {pid}")
+            return pid
 #####~~~~~MAIN~~~~~#####
 #define like this for ease of use later
 myProgram = Program()
@@ -556,17 +734,6 @@ myProgramVariables = myProgram.programVariables
 
 
 
-class pprint (gdb.Command):
-    """user defined gdb command"""
-    def __init__(self):
-                                 #cmd user types in goeshere
-        super(pprint,self).__init__("pprint",gdb.COMMAND_USER)
-    #this is what happens when they type in the command     
-    def invoke(self, arg, from_tty):
-        argString = arg.strip('').split('-')
-        print("invoking pprint")
-        #print(f"len arg: {len(arg)} it is: {arg} type: {type(arg)} argstring: {argString}")
-pprint() 
 
 def printRegisters(regaddrs, reglist):
     for i in range (len(regaddrs)):
@@ -579,11 +746,15 @@ class pstack (gdb.Command):
         super(pstack,self).__init__("pstack",gdb.COMMAND_USER)
     #this is what happens when they type in the command     
     def invoke(self, arg, from_tty):
-        argString = arg.strip('').split('-')
-        print("invoking pstack")
-        print(f"len arg: {len(arg)} it is: {arg} type: {type(arg)} argstring: {argString}")
-        myProgramStack.getRegs()
-        myProgramStack.printAll()
+        if(isGDBRunningpy()):
+            argString = arg.strip('').split('-')
+            print("invoking pstack")
+            print(f"len arg: {len(arg)} it is: {arg} type: {type(arg)} argstring: {argString}")
+            myProgramStack.getRegs()
+            if(from_tty):
+                myProgramStack.printAll()
+        else:
+            print("not debugging, please run before using.")
         
 pstack() 
 class pfunc (gdb.Command):
@@ -597,7 +768,8 @@ class pfunc (gdb.Command):
         #print(arg)
         print(f"invoking pfunc {arg}")    
         myProgramFunctions.populateFunctions()
-        myProgramFunctions.printAll()
+        if(from_tty):
+            myProgramFunctions.printAll()
 
 pfunc()
 #this would cause confusion, so just forward it to pfunc
@@ -615,35 +787,126 @@ pfuncs()
 #we can abuse the vars() function with .get('key') it does not get updated when changed though.
     #thing = vars(myProgram).get('PID')
 
-
-#need to do something with this rethere
-
-#is gdb running needs work (or a smarter way to do it rethere)
-class isGDBRunning (gdb.Command):
-    """figure out if gdb is running or not"""
+#i dont know why there is a difference between what is reported in stat and map
+class ptest (gdb.Command):
+    """user defined gdb command"""
     def __init__(self):
                                  #cmd user types in goeshere
-        super(isGDBRunning,self).__init__("amirunning",gdb.COMMAND_USER)
+        super(ptest,self).__init__("ptest",gdb.COMMAND_USER)
     #this is what happens when they type in the command     
     def invoke(self, arg, from_tty):
-        try:
-            out =gdb.execute('info registers',to_string=True)
-            print( out[-1])
-            if out[-1] == 'w':
-                print("not running")
-            else:
-                print("i am running")
-        except gdb.error:
-            print("some error probably fine")
-isGDBRunning()
+        print("invoking ptest") 
+        print(f"from_tty: {from_tty}")
+ptest()
 
-def isGDBRunningpy():
-    out = gdb.execute('info line',to_string=True)
-    if (out[0] == 'N'):
-        return False
+
+
+class pprint (gdb.Command):
+    """run all p commands and hope for the best"""
+    def __init__(self):
+                                 #cmd user types in goeshere
+        super(pprint,self).__init__("pprint",gdb.COMMAND_USER)
+    #this is what happens when they type in the command     
+    def invoke(self, arg, from_tty):
+        #need add extranious things like data and stuff
+        bigListNames = []
+        bigListAddrs = []
+        #argString = arg.strip('').split('-')
+        print("invoking pprint")
+        gdb.execute('pfunc')
+        gdb.execute('pvars')
+        gdb.execute('pmap')
+        gdb.execute('pstat')
+        gdb.execute('pstack')
+        myProgramStack.getFrameInfo()
+        print("gathered all data ")
+        #manual stuff 
+        #map 
+        #may need to check if empty here 
+        # if(myProgram.mapHeapBottom==''):
+        #     pass
+        # else:
+        if(myProgram.mapHeapBottom == ""):
+            pass
+        else:
+            bigListNames.append("map_heap_bottom")
+            bigListAddrs.append(myProgram.mapHeapBottom)
+            bigListNames.append("map_heap_top")
+            bigListAddrs.append(myProgram.mapHeapTop)
+        bigListNames.append("map_stack_bottom")
+        bigListAddrs.append(myProgram.mapStackBottom)
+        bigListNames.append("map_stack_top")
+        bigListAddrs.append(myProgram.mapStackTop)
+        print("finished appending mapstack")
+        #automated stuff 
+        #stack registers
+        for i in range(len(myProgramStack.stackRegisterNames)):
+            bigListNames.append(myProgramStack.stackRegisterNames[i])
+            bigListAddrs.append(myProgramStack.stackRegisterAddresses[i])
+        print("appended stack registers")    
+        #functions
+        for i in range(len(myProgramFunctions.functionsName)):
+            bigListNames.append(myProgramFunctions.functionsName[i])
+            bigListAddrs.append(myProgramFunctions.functionsAddr[i])
+        print("appended functions")        
+        #variable info
+        for i in range(len(myProgramVariables.varNames)):
+            bigListNames.append(myProgramVariables.varNames[i])
+            bigListAddrs.append(myProgramVariables.varAddrs[i])
+             
+        #stat 
+        for i in range(len(myProgram.statHexInfo)):
+            bigListNames.append(myProgram.statWhatInfo[i])
+            bigListAddrs.append(myProgram.statHexInfo[i])
+        
+        printPair(bigListNames,bigListAddrs)
+        sortedNames, sortedAddrs = sortTheBigList(bigListNames,bigListAddrs)
+        printPair(sortedNames,sortedAddrs)
+        # myProgram.everything =  [ [myProgram.programStack.both], 
+        #    [myProgram.programFuncs.funcInfo], [myProgram.programVariables.variableInfo]  ]
+        # count = 0
+        # for e in myProgram.everything:
+        #     print(count,e)
+        #     count +=1
+pprint() 
+
+def printPair(names,addrs):
+    const = 20
+    print("---------------------------")
+    print("reg/var/func/info    address")
+    print("---------------------------")
+    for i in range(len(names)):
+        #print(f"{names[i]}{' '.ljust(10)}{addrs[i]}")
+        nameSize = len(names[i])
+        spaceString = " "
+        for j in range(const-(nameSize)):
+            spaceString = spaceString + " "
+        print(f"{names[i]}{spaceString}{addrs[i]}")
+   
+
+def sortTheBigList(reglist, regaddrs):
+    #regaddrs = self.registerAddresses 
+    #reglist = self.registerNames
+    
+    #dont bother sorting if the length is only 1. 
+    #does it even count as an optimization 
+    # if its only ever called once?
+    if(len(regaddrs)==1):
+        pass
     else:
-        return True
-
+        
+        for i in range(len(regaddrs)):
+            for j in range(len(regaddrs)):
+                # < should be the correct direction
+                if int(regaddrs[i],16) < int(regaddrs[j],16):
+                # print(f"swapping: {(regaddrs[i])} with {(regaddrs[j])}")
+                    tmpaddrs = regaddrs[i]
+                    regaddrs[i] = regaddrs[j]
+                    regaddrs[j] = tmpaddrs
+                    templist = reglist[i]
+                    reglist[i] = reglist[j]
+                    reglist[j] = templist
+    return reglist, regaddrs
 # myProgram.programStack.addReg(regaddrs[0],reglist[0])
 # myProgramStack.addReg(regaddrs[1],reglist[1])
 # print(myProgram.programStack.both)
