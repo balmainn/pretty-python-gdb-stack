@@ -3,7 +3,12 @@
 ###########todo 
 # """docstrings""" (ie help <functioname>)
 # get/print everything 
-# send it to GUI for nice picture 
+# send it to GUI for nice picture (prototype is built in windowonly.py)
+#need to build a "tracking" command
+#or just auto do this x times and save a picture of the stack each time
+#add mode support 
+#more doc string stuff 
+#prettyify output 
 import re
 import os
 
@@ -208,7 +213,7 @@ class Stack:
         return frameRegNames, frameRegs
     
 class resource (gdb.Command):
-    """user defined gdb command"""
+    """reload this file, with changes"""
     def __init__(self):
                                  #cmd user types in goeshere
         super(resource,self).__init__("rs",gdb.COMMAND_USER)
@@ -618,7 +623,7 @@ class Variables:
                 pass
         return allVariableNames, allVariableAddresses
 class pvars (gdb.Command):
-    """user defined gdb command"""
+    """find and print the variables known at the current point"""
     def __init__(self):
                                  #cmd user types in goeshere
         super(pvars,self).__init__("pvars",gdb.COMMAND_USER)
@@ -639,7 +644,7 @@ def printObject(obj):
     obj.printAll()
 
 class pstat (gdb.Command):
-    """user defined gdb command"""
+    """print information from proc/$pid/stat"""
     def __init__(self):
                                  #cmd user types in goeshere
         super(pstat,self).__init__("pstat",gdb.COMMAND_USER)
@@ -652,7 +657,7 @@ class pstat (gdb.Command):
 pstat() 
 
 class pmaps (gdb.Command):
-    """user defined gdb command"""
+    """print informtaion from proc/$pid/maps"""
     def __init__(self):
                                  #cmd user types in goeshere
         super(pmaps,self).__init__("pmaps",gdb.COMMAND_USER)
@@ -666,7 +671,7 @@ class pmaps (gdb.Command):
 pmaps() 
 
 class pprogram (gdb.Command):
-    """user defined gdb command"""
+    """the big print program, need more docstring"""
     def __init__(self):
                                  #cmd user types in goeshere
         super(pprogram,self).__init__("pprogram",gdb.COMMAND_USER)
@@ -740,7 +745,7 @@ def printRegisters(regaddrs, reglist):
         print(f"{regaddrs[i]} {reglist[i]}")
 
 class pstack (gdb.Command):
-    """user defined gdb command"""
+    """print the stack registers known at the current point"""
     def __init__(self):
                                  #cmd user types in goeshere
         super(pstack,self).__init__("pstack",gdb.COMMAND_USER)
@@ -758,7 +763,7 @@ class pstack (gdb.Command):
         
 pstack() 
 class pfunc (gdb.Command):
-    """user defined gdb command"""
+    """print the functions known to the program at the current point"""
     def __init__(self):
                                  #cmd user types in goeshere
         super(pfunc,self).__init__("pfunc",gdb.COMMAND_USER)
@@ -774,7 +779,7 @@ class pfunc (gdb.Command):
 pfunc()
 #this would cause confusion, so just forward it to pfunc
 class pfuncs (gdb.Command):
-    """user defined gdb command"""
+    """calls pfunc"""
     def __init__(self):
                                  #cmd user types in goeshere
         super(pfuncs,self).__init__("pfuncs",gdb.COMMAND_USER)
@@ -786,6 +791,16 @@ class pfuncs (gdb.Command):
 pfuncs()
 #we can abuse the vars() function with .get('key') it does not get updated when changed though.
     #thing = vars(myProgram).get('PID')
+class psp (gdb.Command):
+    """print the top 10 addresses of the stack"""
+    def __init__(self):
+                                 #cmd user types in goeshere
+        super(psp,self).__init__("psp",gdb.COMMAND_USER)
+    #this is what happens when they type in the command     
+    def invoke(self, arg, from_tty):
+        print("invoking psp") 
+        gdb.execute('x/10x $sp')
+psp()
 
 #i dont know why there is a difference between what is reported in stat and map
 class ptest (gdb.Command):
@@ -795,19 +810,31 @@ class ptest (gdb.Command):
         super(ptest,self).__init__("ptest",gdb.COMMAND_USER)
     #this is what happens when they type in the command     
     def invoke(self, arg, from_tty):
+        if len(arg)>0:
+            print(f"arg invoke: {arg}")
         print("invoking ptest") 
         print(f"from_tty: {from_tty}")
+        print(f"len arg: {len(arg)}")
 ptest()
 
 
-
 class pprint (gdb.Command):
-    """run all p commands and hope for the best"""
+    """run all p commands and hope for the best
+    <copy paste information for all functions here>  gdb.execute('pfunc')
+    supported commands:
+        'pvars'
+        'pmap'
+        'pstat'
+        'pstack'
+        pprint: print all information and display with the current mode 
+    """
     def __init__(self):
                                  #cmd user types in goeshere
         super(pprint,self).__init__("pprint",gdb.COMMAND_USER)
     #this is what happens when they type in the command     
     def invoke(self, arg, from_tty):
+        #need flag for all, gui, ...tui?
+
         #need add extranious things like data and stuff
         bigListNames = []
         bigListAddrs = []

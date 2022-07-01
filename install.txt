@@ -1,6 +1,23 @@
-pip
-pip install tk 
-pip install appjar
-sudo apt-get install python3-tk 
-add-auto-load-safe-path <path to project>/.gdbinit
-sudo apt-get install gcc-multilib 
+dependencies for development /use 
+    pip
+    pip install tk 
+    sudo apt-get install gcc-multilib 
+    sudo apt-get install python3-tk  ?
+    pip install python-dev-tools
+    pip install PyQt6
+
+not implamented yet 
+    add-auto-load-safe-path <path to project>/.gdbinit
+
+to use 
+make sure the binary executable was comblied with -g flag to enable full debugging functionality
+run this command in a terminal
+gdb ./executable -x programclass.py
+
+currently only supports development in a linux enviornment 
+
+using:
+
+added commands:
+<copy paste docstrings>
+

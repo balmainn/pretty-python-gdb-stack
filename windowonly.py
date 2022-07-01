@@ -20,36 +20,80 @@ from PIL import ImageQt as ImageQt
 #         self.resize(300, 250)
 #         self.setWindowTitle("CodersLegacy")
  
-class MyWidget(QWidget):
-    def __init__(self, parent=None):
+def getData():
+    #for now just gets it as a text file
+    #when ready slap the arrays from pprint here
+    with open ('output.txt', 'r') as f:
+        lines=f.readlines()
+    linesarr = []
+    for line in lines:        
+       # print(line.split())
+        linesarr.append(line.split())
+   # print(linesarr)
+    namesarr =[]
+    addrsarr = []
+    for i in range(len(linesarr)):
+        namesarr.append(linesarr[i][0])
+        addrsarr.append(linesarr[i][1])
+
+    #print(namesarr,addrsarr)
+    for i in range(len(namesarr)):
+        print(f"{namesarr[i]} {addrsarr[i]}")
+    return namesarr,addrsarr
+
+from PyQt6.QtWidgets import QApplication, QWidget
+from PyQt6.QtGui import QIcon, QPainter, QTextDocument
+from PyQt6.QtCore import QRect, Qt, QRectF,QPointF,QPoint
+import sys
+import math 
+ 
+class Window(QWidget):
+    def __init__(self):
         super().__init__()
+        self.setWindowTitle("Pretty Python GDB Stack - V2")
+        self.setWindowIcon(QIcon("qt.png"))
+        self.setGeometry(500,200, 500,400)
+ 
+    def paintEvent(self, e):
+        outputNames, outputAddrs = getData()
+        painter = QPainter(self)
+       
+        recs = []
+        width = 400 
+        height = 400
+        size = 25
+        namePoints = []
+        addrPoints = []
+        
+        for i in range(len(outputNames)):
+            #QRect(xstart, ystart, xsize, ysize)
+            recs.append(QRect(100,i*size,100,50))
+            #QPointF(x0, y0)
+            nameLocationPoint = QPointF(210,(i*size))
+            namePoints.append(nameLocationPoint)
+            addrsLocationPoint = QPointF(110,(i*size))
+            addrPoints.append(addrsLocationPoint)
+            #QRect(0)
+     
+        #draw recteangles
+        for r in recs:
+           painter.drawRect(r)
+        #draw points 
+        # for p in points:
+        #     painter.drawText(p,"painter text")
+        for i in range(len(outputNames)):
+            painter.drawText(namePoints[i],outputNames[i])
+            painter.drawText(addrPoints[i],outputAddrs[i])
+        
+        document = QTextDocument()
+ 
+        document.drawContents(painter)
+ 
 
-        self.setGeometry(300, 300, 400, 293)
-        self.setWindowTitle('My Widget!')
-
-        width = 400
-        height = 300
-        img = Image.new(mode = "RGB", size= (width, height))
-        img2 = Image.open(img)
-        PilImage = img2 #Image.open('kitten.jpg')
-        QtImage1 = ImageQt(PilImage)
-        QtImage2 = QImage(QtImage1)
-        pixmap = QPixmap.fromImage(QtImage2)
-        label = QLabel('', self)
-        label.setPixmap(pixmap)
-
-
-if __name__ == '__main__':
-    #app = QApplication(sys.argv)
-# window = GridMainWindow()
-# window.show()
-# sys.exit(app.exec())
-    app = QApplication(sys.argv)
-    myWidget = MyWidget()
-    myWidget.show()
-
-    sys.exit(app.exec_())
-
+app = QApplication(sys.argv)
+window = Window()
+window.show()
+sys.exit(app.exec())
 
 
 # # from PyQt6.QtWidgets import (
