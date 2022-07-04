@@ -12,6 +12,7 @@ from  PyQt6 import *
 import sys
 from PIL import Image as Image
 from PIL import ImageQt as ImageQt
+import PySide6
 
 
 # class Window(QWidget):
@@ -44,26 +45,40 @@ def getData():
 from PyQt6.QtWidgets import QApplication, QWidget
 from PyQt6.QtGui import QIcon, QPainter, QTextDocument
 from PyQt6.QtCore import QRect, Qt, QRectF,QPointF,QPoint
+#QString and QRegEXP
 import sys
 import math 
- 
+from PySide6.QtGui import QSyntaxHighlighter
+
+#PySide6.QtGui.QSyntaxHighlighter.setFormat(start, count, color)
+         
 class Window(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Pretty Python GDB Stack - V2")
         self.setWindowIcon(QIcon("qt.png"))
         self.setGeometry(500,200, 500,400)
- 
+
+    def highLight(self,text):
+        if text == 'esp,ebp,saved_esp,saved_ebp'    
+        #well i need to do this anyway, ret here i guess. 
     def paintEvent(self, e):
         outputNames, outputAddrs = getData()
         painter = QPainter(self)
-       
+
+        
         recs = []
         width = 400 
         height = 400
         size = 25
         namePoints = []
         addrPoints = []
+        
+        #set background color to blue 
+        # palette = self.palette()
+        # color = 'blue'
+        # palette.setColor(QPalette.ColorRole.Window, QColor(color))
+        #self.setPalette(palette)
         
         for i in range(len(outputNames)):
             #QRect(xstart, ystart, xsize, ysize)
@@ -74,7 +89,7 @@ class Window(QWidget):
             addrsLocationPoint = QPointF(110,(i*size))
             addrPoints.append(addrsLocationPoint)
             #QRect(0)
-     
+
         #draw recteangles
         for r in recs:
            painter.drawRect(r)
@@ -84,7 +99,7 @@ class Window(QWidget):
         for i in range(len(outputNames)):
             painter.drawText(namePoints[i],outputNames[i])
             painter.drawText(addrPoints[i],outputAddrs[i])
-        
+            painter.setPen(QColor(i*10, i*10, i*10))
         document = QTextDocument()
  
         document.drawContents(painter)

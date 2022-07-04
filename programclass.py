@@ -12,7 +12,7 @@
 import re
 import os
 
-from black import mypyc_attr
+
 
 class Heap:
     def __init__(self) -> None:
@@ -108,7 +108,7 @@ class Stack:
         self.both = [reglist,regaddrs]
     def printAll(self):
         print("printing stack")
-        testPrint(self.stackRegisterNames,self.stackRegisterAddresses)
+        printPair(self.stackRegisterNames,self.stackRegisterAddresses)
         # self.printPretty()
         # self.sortRegs()
         # print("sorted stack")
@@ -897,7 +897,44 @@ class pprint (gdb.Command):
         #     count +=1
 pprint() 
 
+def getColor(text):
+    #the things we want to highlight
+    
+    #keyRegs = ['eip', 'saved_eip', 'saved_esp', 'saved_ebp']
+    keyRegs = ['eip', 'edx', 'edi', 'saved_ebp']
+    #keyVariables (if first thing is a v``)
+    #keyFunction (if first thing is a f)
+    #the colors we want to use 
+    # keyRegColor = 'red'
+    # keyVarColor = 'blue'
+    # keyFuncColor = 'green'
+    for key in keyRegs:
+        if(text == key):
+            return 'red'
+            #print(key,text[1:])
+            
+            #textout = colored(text, keyRegColor)
+    
+    # if(text[0]=='r'):
+    #     for key in keyRegs:
+    #         #print(key,text[1:])
+    #         if(text[1:] == key):
+    #         #textout = colored(text, keyRegColor)
+    #             return 'red'
+            
+    #     return 'magenta'
+
+    # #this is a function
+    # if(text[0]=='f'):
+    #     #textout = colored(text, keyFuncColor)
+    #     return keyFuncColor
+    # #this is a variable
+    # if(text[0]=='v'):
+    #    # textout = colored(text, keyVarColor)
+    #     return keyVarColor
+from termcolor import colored
 def printPair(names,addrs):
+    
     const = 20
     print("---------------------------")
     print("reg/var/func/info    address")
@@ -908,9 +945,13 @@ def printPair(names,addrs):
         spaceString = " "
         for j in range(const-(nameSize)):
             spaceString = spaceString + " "
-        print(f"{names[i]}{spaceString}{addrs[i]}")
-   
-
+        color ="white"
+        color = getColor(names[i])
+        if(color == 'white'):
+            print(f"{names[i]}{spaceString}{addrs[i]}")
+        else:
+            out = colored(f"{names[i]}{spaceString}{addrs[i]}",color)
+            print(out)
 def sortTheBigList(reglist, regaddrs):
     #regaddrs = self.registerAddresses 
     #reglist = self.registerNames
