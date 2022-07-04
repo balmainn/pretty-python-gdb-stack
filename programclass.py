@@ -9,6 +9,7 @@
 #add mode support 
 #more doc string stuff 
 #prettyify output 
+
 import re
 import os
 
@@ -313,9 +314,42 @@ class Func:
             print(f"{nums[i]}:{names[i]}{spaceString}{addrs[i]}")
     
 #primary way to keep track of things
+
+
+ #command to set colors for different things 
+
+#basically just runs show commands but as wc which is easy and lazy. 
+class changeColor (gdb.Command):
+    """shows the command history the user has entered so far"""
+    def __init__(self):
+                                 #cmd user types in goeshere
+        super(changeColor,self).__init__("changecolor",gdb.COMMAND_USER)
+    #this is what happens when they type in the command     
+    def invoke(self, arg, from_tty):
+        print("invoking changeColor")
+        print(f"args: {arg}")
+        argst = arg.split()
+        print(f"split: {argst}")
+        #change back to default
+        #if(len(arg==0)):
+        #myProgram.changeColor('red','nope')
+        #try: except: IndexError
+        myProgram.changeColor(argst[1],argst[0])
+changeColor()
+ # command to check valid mode    
+
 class Program:
 
     def __init__(self):   
+        self.mode = ""
+        #default colors
+        self.varColor = ""
+        self.funcColor = ""
+        self.regColor = ""
+        self.specialRegisterColor = ""
+        self.defaultColor = "white"
+
+        self.programMode = ""
         self.executable =""
         self.filepath = ""
         #PID = getPID()
@@ -351,6 +385,26 @@ class Program:
         self.getPID()
         self.getProgramFilePath()
 
+    def changeColor(self, color, t):
+        try: 
+            out = "changing " +colored(t,color) + " to " + colored(color,color)
+        except KeyError:
+            print(f"invalid color option {color}")
+            return
+
+        if(t=="var" or t == 'variable'):
+            self.varColor = color
+        elif(t == 'func' or t== 'function'):
+            self.funcColor = color
+        elif(t == 'reg' or t == 'register'):
+            self.regColor == color
+        elif(t == 's' or t== 'specialreg'):
+            self.specialRegisterColor = color
+        else:
+            print(f"invalid input: {t}")
+            return
+        
+        print(out)
     def getProgramFilePath(self):
         out = gdb.execute("info line",to_string = True)
         fileregex = "\".+\""
