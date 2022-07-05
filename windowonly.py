@@ -60,7 +60,8 @@ class Window(QWidget):
         self.setGeometry(500,200, 500,400)
 
     def highLight(self,text):
-        if text == 'esp,ebp,saved_esp,saved_ebp'    
+        pass
+        #if text == 'esp,ebp,saved_esp,saved_ebp'    
         #well i need to do this anyway, ret here i guess. 
     def paintEvent(self, e):
         outputNames, outputAddrs = getData()

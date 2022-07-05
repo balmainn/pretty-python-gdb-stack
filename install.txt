@@ -6,9 +6,12 @@ dependencies for development /use
     pip install python-dev-tools
     pip install PyQt6
 
+    PySide6  ?
+
 not implamented yet 
     add-auto-load-safe-path <path to project>/.gdbinit
-
+    python3 -m pip install pip setuptools --upgrade (because PyQt6 is not nice)
+    sudo python3 -m pip install PyQt6
 to use 
 make sure the binary executable was comblied with -g flag to enable full debugging functionality
 run this command in a terminal

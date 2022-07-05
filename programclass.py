@@ -9,7 +9,11 @@
 #add mode support 
 #more doc string stuff 
 #prettyify output 
-
+#sperate out modes and how they work 
+#color 
+# builder mode (most complicated)
+# simple mode (probably default)
+# complex mode
 import re
 import os
 
@@ -74,6 +78,8 @@ class Stack:
         
         self.dataStart = 0
         self.dataEnd = 0
+        self.regColor = 'white'
+        self.specialRegColor = 'red'
         #need to do something with this 
         self.bottomOfStack = "0x00000000"
         #we have not added anything to the stack on creation 
@@ -109,7 +115,10 @@ class Stack:
         self.both = [reglist,regaddrs]
     def printAll(self):
         print("printing stack")
-        printPair(self.stackRegisterNames,self.stackRegisterAddresses)
+        regColors =['white'] * len(self.stackRegisterAddresses)
+
+            
+        printPair(self.stackRegisterNames,self.stackRegisterAddresses,regColors)
         # self.printPretty()
         # self.sortRegs()
         # print("sorted stack")
@@ -318,12 +327,22 @@ class Func:
 
  #command to set colors for different things 
 
-#basically just runs show commands but as wc which is easy and lazy. 
+#bug in changing registers (problem, yes)
 class changeColor (gdb.Command):
-    """shows the command history the user has entered so far"""
+    """schanges the color of certain information. 
+    invoke: pcc
+    things that can be changed:
+    registers (reg)
+    variables (var)
+    functions (func)
+
+    supported colors: 
+        grey red green yellow blue magenta cyan white
+        """
     def __init__(self):
                                  #cmd user types in goeshere
-        super(changeColor,self).__init__("changecolor",gdb.COMMAND_USER)
+        super(changeColor,self).__init__("pcc",gdb.COMMAND_USER)
+        
     #this is what happens when they type in the command     
     def invoke(self, arg, from_tty):
         print("invoking changeColor")
@@ -334,29 +353,39 @@ class changeColor (gdb.Command):
         #if(len(arg==0)):
         #myProgram.changeColor('red','nope')
         #try: except: IndexError
-        myProgram.changeColor(argst[1],argst[0])
+        try:
+            myProgram.changeColor(argst[1],argst[0])
+        except IndexError:
+            print("invalid number of arguments. supported call: pcc <type> <color>")
 changeColor()
  # command to check valid mode    
 
 class Program:
 
     def __init__(self):   
+        self.programStack = Stack()
+        self.programHeap = Heap()
+        self.programFuncs = Func()
+        self.programVariables = Variables()
+
         self.mode = ""
         #default colors
-        self.varColor = ""
-        self.funcColor = ""
-        self.regColor = ""
-        self.specialRegisterColor = ""
+        #variables
+        self.varColor = "white"
+        #functions
+        self.funcColor = "white"
+        #used for stack
+        self.regColor = self.programStack.regColor
+
+        #special registry colors (esp, edi, etc)
+        self.specialRegisterColor = self.programStack.specialRegColor
         self.defaultColor = "white"
 
         self.programMode = ""
         self.executable =""
         self.filepath = ""
         #PID = getPID()
-        self.programStack = Stack()
-        self.programHeap = Heap()
-        self.programFuncs = Func()
-        self.programVariables = Variables()
+        
         #arrray of functions... 
         
         self.PID = 0
@@ -386,25 +415,29 @@ class Program:
         self.getProgramFilePath()
 
     def changeColor(self, color, t):
+        print(f"recieved: {color} {t}")
         try: 
             out = "changing " +colored(t,color) + " to " + colored(color,color)
+            
+
+            if(t=="var" or t == 'variable'):
+                self.varColor = color
+            elif(t == 'func' or t== 'function'):
+                self.funcColor = color
+            elif(t == 'reg' or t == 'register'):
+                print("changing registers")
+                self.regColor = color
+                return
+            elif(t == 's' or t== 'specialreg'):
+                self.specialRegisterColor = color
+            else:
+                print(f"invalid input: {t}")
+            
         except KeyError:
             print(f"invalid color option {color}")
-            return
-
-        if(t=="var" or t == 'variable'):
-            self.varColor = color
-        elif(t == 'func' or t== 'function'):
-            self.funcColor = color
-        elif(t == 'reg' or t == 'register'):
-            self.regColor == color
-        elif(t == 's' or t== 'specialreg'):
-            self.specialRegisterColor = color
-        else:
-            print(f"invalid input: {t}")
-            return
-        
+            
         print(out)
+
     def getProgramFilePath(self):
         out = gdb.execute("info line",to_string = True)
         fileregex = "\".+\""
@@ -877,10 +910,44 @@ class pprint (gdb.Command):
     <copy paste information for all functions here>  gdb.execute('pfunc')
     supported commands:
         'pvars'
+        prints contents of the stack at the current line in the program. 
+            
+            Builder mode: 
+            simple mode: 
+            <complex/full> mode: 
+        'pfunc'
+            uilder mode: 
+            simple mode: 
+            <complex/full> mode:
         'pmap'
+            uilder mode: 
+            simple mode: 
+            <complex/full> mode:
         'pstat'
+            uilder mode: 
+            simple mode: 
+            <complex/full> mode:
         'pstack'
+            prints contents of the stack at the current line in the program. 
+            
+            Builder mode: add and print stack 
+            simple mode: print most important stack information 
+            <complex/full> mode: print all stack information
+        'changecolor' type color
+            type: var, func, special, regs
+                var: changes variable color (default: << color here >>)
+                func: changes functions colors (default: << color here >>)
+                reg: changes general register colors (default: << color here >>)
+                special: changes the special registers colors ('eip', 'edx', 'edi', 'saved_ebp')
+            supported colors: https://pypi.org/project/termcolor/
+
         pprint: print all information and display with the current mode 
+            builder mode: 
+                print all information that has been "built"
+            simple mode: 
+                print all simple information
+            <complex/full> mode:
+                print everything, Yes Everything. 
     """
     def __init__(self):
                                  #cmd user types in goeshere
@@ -892,6 +959,7 @@ class pprint (gdb.Command):
         #need add extranious things like data and stuff
         bigListNames = []
         bigListAddrs = []
+        bigListColors = []
         #argString = arg.strip('').split('-')
         print("invoking pprint")
         gdb.execute('pfunc')
@@ -914,35 +982,55 @@ class pprint (gdb.Command):
             bigListAddrs.append(myProgram.mapHeapBottom)
             bigListNames.append("map_heap_top")
             bigListAddrs.append(myProgram.mapHeapTop)
+            bigListColors.append("white")
+            bigListColors.append("white")
+
         bigListNames.append("map_stack_bottom")
         bigListAddrs.append(myProgram.mapStackBottom)
         bigListNames.append("map_stack_top")
         bigListAddrs.append(myProgram.mapStackTop)
+        bigListColors.append("white")
+        bigListColors.append("white")
         print("finished appending mapstack")
         #automated stuff 
         #stack registers
+        #stack registers is not apending the color properly when changing
+        special_registers = ['eip', 'edx', 'edi', 'saved_ebp'] #double check these 
         for i in range(len(myProgramStack.stackRegisterNames)):
             bigListNames.append(myProgramStack.stackRegisterNames[i])
             bigListAddrs.append(myProgramStack.stackRegisterAddresses[i])
+            found = 0
+            for specReg in special_registers:
+                
+                if(myProgramStack.stackRegisterNames[i] == specReg):
+                    bigListColors.append(myProgram.specialRegisterColor)
+                    found = 1
+            if(not found):    
+                bigListColors.append(myProgram.regColor)
+                
         print("appended stack registers")    
+
         #functions
         for i in range(len(myProgramFunctions.functionsName)):
             bigListNames.append(myProgramFunctions.functionsName[i])
             bigListAddrs.append(myProgramFunctions.functionsAddr[i])
+            bigListColors.append(myProgram.funcColor)
         print("appended functions")        
         #variable info
         for i in range(len(myProgramVariables.varNames)):
             bigListNames.append(myProgramVariables.varNames[i])
             bigListAddrs.append(myProgramVariables.varAddrs[i])
+            bigListColors.append(myProgram.varColor)
              
         #stat 
         for i in range(len(myProgram.statHexInfo)):
             bigListNames.append(myProgram.statWhatInfo[i])
             bigListAddrs.append(myProgram.statHexInfo[i])
+            bigListColors.append("white")
         
-        printPair(bigListNames,bigListAddrs)
-        sortedNames, sortedAddrs = sortTheBigList(bigListNames,bigListAddrs)
-        printPair(sortedNames,sortedAddrs)
+        printPair(bigListNames,bigListAddrs,bigListColors)
+        sortedNames, sortedAddrs, sortedColors = sortTheBigList(bigListNames,bigListAddrs,bigListColors)
+        printPair(sortedNames,sortedAddrs,sortedColors)
         # myProgram.everything =  [ [myProgram.programStack.both], 
         #    [myProgram.programFuncs.funcInfo], [myProgram.programVariables.variableInfo]  ]
         # count = 0
@@ -987,7 +1075,7 @@ def getColor(text):
     #    # textout = colored(text, keyVarColor)
     #     return keyVarColor
 from termcolor import colored
-def printPair(names,addrs):
+def printPair(names,addrs,colors):
     
     const = 20
     print("---------------------------")
@@ -999,14 +1087,11 @@ def printPair(names,addrs):
         spaceString = " "
         for j in range(const-(nameSize)):
             spaceString = spaceString + " "
-        color ="white"
-        color = getColor(names[i])
-        if(color == 'white'):
-            print(f"{names[i]}{spaceString}{addrs[i]}")
-        else:
-            out = colored(f"{names[i]}{spaceString}{addrs[i]}",color)
-            print(out)
-def sortTheBigList(reglist, regaddrs):
+        
+        out = colored(f"{names[i]}{spaceString}{addrs[i]}",colors[i])
+        print(out)
+
+def sortTheBigList(reglist, regaddrs,colors):
     #regaddrs = self.registerAddresses 
     #reglist = self.registerNames
     
@@ -1028,7 +1113,13 @@ def sortTheBigList(reglist, regaddrs):
                     templist = reglist[i]
                     reglist[i] = reglist[j]
                     reglist[j] = templist
-    return reglist, regaddrs
+                    tmpcolor = colors[i] 
+                    colors[i] = colors[j]
+                    colors[j] = tmpcolor
+    return reglist, regaddrs, colors
+
+
+#debug
 # myProgram.programStack.addReg(regaddrs[0],reglist[0])
 # myProgramStack.addReg(regaddrs[1],reglist[1])
 # print(myProgram.programStack.both)
