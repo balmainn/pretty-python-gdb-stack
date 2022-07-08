@@ -14,6 +14,8 @@
 # builder mode (most complicated)
 # simple mode (probably default)
 # complex mode
+#import statements for gui (pyqt6 etc) should ONLY be in that function (hopefully so people that dont want/need to use gui dont need to install pyqt6)
+
 import re
 import os
 
@@ -368,12 +370,15 @@ class Program:
         self.programFuncs = Func()
         self.programVariables = Variables()
 
-        self.mode = ""
+        #mode the program runs in (should initialze to something)
+        #simple / default are the same thing
+        #self.mode = ""
+        self.mode = "default"
         #default colors
         #variables
-        self.varColor = "white"
+        self.varColor = "green"
         #functions
-        self.funcColor = "white"
+        self.funcColor = "blue"
         #used for stack
         self.regColor = self.programStack.regColor
 
@@ -410,6 +415,7 @@ class Program:
         #this might be a bad idea...
         #sizes [2], [2], [3], [3]
         self.everything = [ [self.programHeap.heapBoth], [self.programStack.both], [self.programFuncs.functionsAddr], [self.variableBoth]   ]
+        self.trackStacks = []
         print("__init__")
         self.getPID()
         self.getProgramFilePath()
@@ -798,6 +804,8 @@ def isGDBRunningpy():
         else:
             print(f"i am running, my pid is: {pid}")
             return pid
+
+
 #####~~~~~MAIN~~~~~#####
 #define like this for ease of use later
 myProgram = Program()
@@ -805,6 +813,12 @@ myProgramStack = myProgram.programStack
 myProgramHeap = myProgram.programHeap
 myProgramFunctions = myProgram.programFuncs
 myProgramVariables = myProgram.programVariables
+
+print("welcome to PPGDB")
+print("the executable is currently running and a breakpoint has been set in main.")
+print("all program modules begin with the letter p.")
+print("to see available modules use \"help pprint\"")
+
 #printObject(myProgramStack)
 
 #RET TESTING
@@ -905,6 +919,130 @@ class ptest (gdb.Command):
 ptest()
 
 
+class changemode (gdb.Command):
+    """change the current program mode
+    simple/default: 
+        print most important inforomation leaving out <certain things>
+        when pchangemode is called witn no arguments or with "default," "simple"
+    verbose/complex: 
+        print everything. yes, everything. 
+    builder: 
+        build print output only displaying things user wants
+            example: registers and variables but not functions and boundry information
+                pregs, pvars, pprint"""
+                
+    def __init__(self):
+                                 #cmd user types in goeshere
+        super(changemode,self).__init__("pchangemode",gdb.COMMAND_USER)
+    #this is what happens when they type in the command     
+    def invoke(self, arg, from_tty):
+        
+        print("invoking changemode") 
+        if(len(arg))<1:
+            myProgram.mode = 'default'
+            print("changed mode to default")    
+        print(f"from_tty: {from_tty}")
+        print(f"len arg: {len(arg)} args: {arg}")
+        myProgram.mode = 'changed'
+
+changemode()
+
+class simplepprint (gdb.Command):
+    """user defined gdb command"""
+    def __init__(self):
+                                 #cmd user types in goeshere
+        super(simplepprint,self).__init__("spp",gdb.COMMAND_USER)
+    #this is what happens when they type in the command     
+    def invoke(self, arg, from_tty):
+                #need flag for all, gui, ...tui?
+
+        #need add extranious things like data and stuff
+        bigListNames = []
+        bigListAddrs = []
+        bigListColors = []
+        #argString = arg.strip('').split('-')
+        print("invoking pprint")
+        gdb.execute('pfunc')
+        gdb.execute('pvars')
+        gdb.execute('pmap')
+        gdb.execute('pstat')
+        gdb.execute('pstack')
+        myProgramStack.getFrameInfo()
+        print("gathered all data ")
+        #manual stuff 
+        #map 
+        #may need to check if empty here 
+        # if(myProgram.mapHeapBottom==''):
+        #     pass
+        # else:
+        if(myProgram.mapHeapBottom == ""):
+            pass
+        else:
+            bigListNames.append("map_heap_bottom")
+            bigListAddrs.append(myProgram.mapHeapBottom)
+            bigListNames.append("map_heap_top")
+            bigListAddrs.append(myProgram.mapHeapTop)
+            bigListColors.append("white")
+            bigListColors.append("white")
+
+        bigListNames.append("map_stack_bottom")
+        bigListAddrs.append(myProgram.mapStackBottom)
+        bigListNames.append("map_stack_top")
+        bigListAddrs.append(myProgram.mapStackTop)
+        bigListColors.append("white")
+        bigListColors.append("white")
+        print("finished appending mapstack")
+        #automated stuff 
+        #stack registers
+        #stack registers is not apending the color properly when changing
+        special_registers = ['eip', 'edx', 'edi', 'saved_ebp'] #double check these 
+        for i in range(len(myProgramStack.stackRegisterNames)):
+            bigListNames.append(myProgramStack.stackRegisterNames[i])
+            bigListAddrs.append(myProgramStack.stackRegisterAddresses[i])
+            found = 0
+            for specReg in special_registers:
+                
+                if(myProgramStack.stackRegisterNames[i] == specReg):
+                    bigListColors.append(myProgram.specialRegisterColor)
+                    found = 1
+            if(not found):    
+                bigListColors.append(myProgram.regColor)
+                
+        print("appended stack registers")    
+
+        #functions
+        for i in range(len(myProgramFunctions.functionsName)):
+            bigListNames.append(myProgramFunctions.functionsName[i])
+            bigListAddrs.append(myProgramFunctions.functionsAddr[i])
+            bigListColors.append(myProgram.funcColor)
+        print("appended functions")        
+        #variable info
+        for i in range(len(myProgramVariables.varNames)):
+            bigListNames.append(myProgramVariables.varNames[i])
+            bigListAddrs.append(myProgramVariables.varAddrs[i])
+            bigListColors.append(myProgram.varColor)
+        
+        
+        printPair(bigListNames,bigListAddrs,bigListColors)
+        sortedNames, sortedAddrs, sortedColors = sortTheBigList(bigListNames,bigListAddrs,bigListColors)
+        #short message about what color things are 
+        varout = colored("variables "+myProgram.varColor,myProgram.varColor)
+        funcout= colored("functions "+myProgram.funcColor,myProgram.funcColor) 
+        regsout = colored("regs " + myProgram.regColor, myProgram.regColor)
+        specregsout = colored("special registers " + myProgram.specialRegisterColor, myProgram.specialRegisterColor)
+        print(varout,funcout,regsout, specregsout)
+        #now print the full thing 
+        printPair(sortedNames,sortedAddrs,sortedColors)
+        myProgram.trackStacks.append([sortedNames, sortedAddrs, sortedColors])
+        # myProgram.everything =  [ [myProgram.programStack.both], 
+        #    [myProgram.programFuncs.funcInfo], [myProgram.programVariables.variableInfo]  ]
+        # count = 0
+        # for e in myProgram.everything:
+        #     print(count,e)
+        #     count +=1
+simplepprint()
+
+
 class pprint (gdb.Command):
     """run all p commands and hope for the best
     <copy paste information for all functions here>  gdb.execute('pfunc')
@@ -947,7 +1085,8 @@ class pprint (gdb.Command):
             simple mode: 
                 print all simple information
             <complex/full> mode:
-                print everything, Yes Everything. 
+                print everything, Yes Everything. You have been warned. 
+            <Debug mode>: print debug information (lots of terminal output helpful trace information in finding problems with the program )    
     """
     def __init__(self):
                                  #cmd user types in goeshere
@@ -1023,14 +1162,23 @@ class pprint (gdb.Command):
             bigListColors.append(myProgram.varColor)
              
         #stat 
-        for i in range(len(myProgram.statHexInfo)):
-            bigListNames.append(myProgram.statWhatInfo[i])
-            bigListAddrs.append(myProgram.statHexInfo[i])
-            bigListColors.append("white")
-        
+        if(myProgram.mode != "default"):
+            for i in range(len(myProgram.statHexInfo)):
+                bigListNames.append(myProgram.statWhatInfo[i])
+                bigListAddrs.append(myProgram.statHexInfo[i])
+                bigListColors.append("white")
+            
         printPair(bigListNames,bigListAddrs,bigListColors)
         sortedNames, sortedAddrs, sortedColors = sortTheBigList(bigListNames,bigListAddrs,bigListColors)
+        #short message about what color things are 
+        varout = colored("variables "+myProgram.varColor,myProgram.varColor)
+        funcout= colored("functions "+myProgram.funcColor,myProgram.funcColor) 
+        regsout = colored("regs " + myProgram.regColor, myProgram.regColor)
+        specregsout = colored("special registers " + myProgram.specialRegisterColor, myProgram.specialRegisterColor)
+        print(varout,funcout,regsout, specregsout)
+        #now print the full thing 
         printPair(sortedNames,sortedAddrs,sortedColors)
+        myProgram.trackStacks.append([sortedNames, sortedAddrs, sortedColors])
         # myProgram.everything =  [ [myProgram.programStack.both], 
         #    [myProgram.programFuncs.funcInfo], [myProgram.programVariables.variableInfo]  ]
         # count = 0
@@ -1038,6 +1186,33 @@ class pprint (gdb.Command):
         #     print(count,e)
         #     count +=1
 pprint() 
+
+#modify the printpair cmd to do more than one per columns 
+class pAllStacks (gdb.Command):
+    """print all stack information collected so far with pprint
+    supported args (number of stacks to print) <<TODO>>
+    color updates only reflect from the point done forward, does not affect previous stack colors
+    eg if variables are white on stack 1 but changed after pprint is called this change will only 
+    be reflected from stack 2 onwards"""
+    def __init__(self):
+                                 #cmd user types in goeshere
+        super(pAllStacks,self).__init__("pas",gdb.COMMAND_USER)
+    #this is what happens when they type in the command     
+    def invoke(self, arg, from_tty):
+        if len(arg)>0:
+            print(f"arg invoke: {arg}")
+        print("invoking print all stacks") 
+        print(f"from_tty: {from_tty}")
+        print(f"len arg: {len(arg)}")
+        s = myProgram.trackStacks
+        i = 0
+        for stack in s:
+            print(f"~~~~stack number {i}~~~~")
+            i= i +1
+            printPair(stack[0],stack[1],stack[2])
+          
+pAllStacks()
+
 
 def getColor(text):
     #the things we want to highlight
