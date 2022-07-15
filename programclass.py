@@ -13,8 +13,11 @@
 #color 
 # builder mode (most complicated)
 # simple mode (probably default)
-# complex mode
+# complex mode (just print everything basically done)
 #import statements for gui (pyqt6 etc) should ONLY be in that function (hopefully so people that dont want/need to use gui dont need to install pyqt6)
+#display things that have data
+#have a visual toggle siwtch between gui and text maybe a prompt like "would you like to enable visual mode?"
+
 
 import re
 import os
@@ -120,7 +123,7 @@ class Stack:
         regColors =['white'] * len(self.stackRegisterAddresses)
 
             
-        printPair(self.stackRegisterNames,self.stackRegisterAddresses,regColors)
+        printPair(self.stackRegisterNames,self.stackRegisterAddresses,regColors, "")
         # self.printPretty()
         # self.sortRegs()
         # print("sorted stack")
@@ -653,8 +656,13 @@ class Variables:
                     #remove ' and " characters
                     d1 = o[2].strip('\"')
                     datast =d1.replace("'",'')
+               #dont add data that has has not been initialized yet. 
+                print(f"datast: {datast}")
+                if(datast=='<error:'):
+                    self.varDatas.append('null')    
                 #print(f"the datast for {var}: {datast} 0th_char: {datast[0]}")  
-                self.varDatas.append(datast)
+                else: 
+                    self.varDatas.append(datast)
             except gdb.MemoryError:
                 #print("some memerror, ignoring")
                 self.varDatas.append('null')
@@ -919,6 +927,19 @@ class ptest (gdb.Command):
 ptest()
 
 
+class pmode (gdb.Command):
+    """prints the current mode of the program"""
+    def __init__(self):
+                                 #cmd user types in goeshere
+        super(pmode,self).__init__("pmode",gdb.COMMAND_USER)
+    #this is what happens when they type in the command     
+    def invoke(self, arg, from_tty):
+        
+        print(f"the current mode is: {myProgram.mode}")
+        
+pmode()
+
+
 class changemode (gdb.Command):
     """change the current program mode
     simple/default: 
@@ -943,104 +964,139 @@ class changemode (gdb.Command):
             print("changed mode to default")    
         print(f"from_tty: {from_tty}")
         print(f"len arg: {len(arg)} args: {arg}")
-        myProgram.mode = 'changed'
+        myProgram.mode = arg
 
 changemode()
 
-class simplepprint (gdb.Command):
-    """user defined gdb command"""
-    def __init__(self):
-                                 #cmd user types in goeshere
-        super(simplepprint,self).__init__("spp",gdb.COMMAND_USER)
-    #this is what happens when they type in the command     
-    def invoke(self, arg, from_tty):
-                #need flag for all, gui, ...tui?
+# class simplepprint (gdb.Command):
+#     """user defined gdb command"""
+#     def __init__(self):
+#                                  #cmd user types in goeshere
+#         super(simplepprint,self).__init__("spp",gdb.COMMAND_USER)
+#     #this is what happens when they type in the command     
+#     def invoke(self, arg, from_tty):
+#                 #need flag for all, gui, ...tui?
 
-        #need add extranious things like data and stuff
-        bigListNames = []
-        bigListAddrs = []
-        bigListColors = []
-        #argString = arg.strip('').split('-')
-        print("invoking pprint")
-        gdb.execute('pfunc')
-        gdb.execute('pvars')
-        gdb.execute('pmap')
-        gdb.execute('pstat')
-        gdb.execute('pstack')
-        myProgramStack.getFrameInfo()
-        print("gathered all data ")
-        #manual stuff 
-        #map 
-        #may need to check if empty here 
-        # if(myProgram.mapHeapBottom==''):
-        #     pass
-        # else:
-        if(myProgram.mapHeapBottom == ""):
-            pass
-        else:
-            bigListNames.append("map_heap_bottom")
-            bigListAddrs.append(myProgram.mapHeapBottom)
-            bigListNames.append("map_heap_top")
-            bigListAddrs.append(myProgram.mapHeapTop)
-            bigListColors.append("white")
-            bigListColors.append("white")
+#         #need add extranious things like data and stuff
+#         bigListNames = []
+#         bigListAddrs = []
+#         bigListColors = []
+#         bigListData = []
+#         #argString = arg.strip('').split('-')
+#         print("invoking pprint")
+#         gdb.execute('pfunc')
+#         gdb.execute('pvars')
+#         gdb.execute('pmap')
+#         gdb.execute('pstat')
+#         gdb.execute('pstack')
+#         myProgramStack.getFrameInfo()
+#         print("gathered all data ")
+#         #manual stuff 
+#         #map 
+#         #may need to check if empty here 
+#         # if(myProgram.mapHeapBottom==''):
+#         #     pass
+#         # else:
+#         if(myProgram.mapHeapBottom == ""):
+#             pass
+#         else:
+#             bigListNames.append("map_heap_bottom")
+#             bigListAddrs.append(myProgram.mapHeapBottom)
+#             bigListNames.append("map_heap_top")
+#             bigListAddrs.append(myProgram.mapHeapTop)
+#             bigListColors.append("white")
+#             bigListColors.append("white")
 
-        bigListNames.append("map_stack_bottom")
-        bigListAddrs.append(myProgram.mapStackBottom)
-        bigListNames.append("map_stack_top")
-        bigListAddrs.append(myProgram.mapStackTop)
-        bigListColors.append("white")
-        bigListColors.append("white")
-        print("finished appending mapstack")
-        #automated stuff 
-        #stack registers
-        #stack registers is not apending the color properly when changing
-        special_registers = ['eip', 'edx', 'edi', 'saved_ebp'] #double check these 
-        for i in range(len(myProgramStack.stackRegisterNames)):
-            bigListNames.append(myProgramStack.stackRegisterNames[i])
-            bigListAddrs.append(myProgramStack.stackRegisterAddresses[i])
-            found = 0
-            for specReg in special_registers:
+#         bigListNames.append("map_stack_bottom")
+#         bigListAddrs.append(myProgram.mapStackBottom)
+#         bigListNames.append("map_stack_top")
+#         bigListAddrs.append(myProgram.mapStackTop)
+#         bigListColors.append("white")
+#         bigListColors.append("white")
+#         print("finished appending mapstack")
+#         #automated stuff 
+#         #stack registers
+#         #stack registers is not apending the color properly when changing
+#         special_registers = ['eip', 'edx', 'edi', 'saved_ebp'] #double check these 
+#         for i in range(len(myProgramStack.stackRegisterNames)):
+#             bigListNames.append(myProgramStack.stackRegisterNames[i])
+#             bigListAddrs.append(myProgramStack.stackRegisterAddresses[i])
+#             found = 0
+#             for specReg in special_registers:
                 
-                if(myProgramStack.stackRegisterNames[i] == specReg):
-                    bigListColors.append(myProgram.specialRegisterColor)
-                    found = 1
-            if(not found):    
-                bigListColors.append(myProgram.regColor)
+#                 if(myProgramStack.stackRegisterNames[i] == specReg):
+#                     bigListColors.append(myProgram.specialRegisterColor)
+#                     found = 1
+#             if(not found):    
+#                 bigListColors.append(myProgram.regColor)
                 
-        print("appended stack registers")    
+#         print("appended stack registers")    
 
-        #functions
-        for i in range(len(myProgramFunctions.functionsName)):
-            bigListNames.append(myProgramFunctions.functionsName[i])
-            bigListAddrs.append(myProgramFunctions.functionsAddr[i])
-            bigListColors.append(myProgram.funcColor)
-        print("appended functions")        
-        #variable info
-        for i in range(len(myProgramVariables.varNames)):
-            bigListNames.append(myProgramVariables.varNames[i])
-            bigListAddrs.append(myProgramVariables.varAddrs[i])
-            bigListColors.append(myProgram.varColor)
+#         #functions
+#         for i in range(len(myProgramFunctions.functionsName)):
+#             bigListNames.append(myProgramFunctions.functionsName[i])
+#             bigListAddrs.append(myProgramFunctions.functionsAddr[i])
+#             bigListColors.append(myProgram.funcColor)
+#         print("appended functions")        
+#         #variable info
+#         for i in range(len(myProgramVariables.varNames)):
+#             bigListNames.append(myProgramVariables.varNames[i])
+#             bigListAddrs.append(myProgramVariables.varAddrs[i])
+#             bigListColors.append(myProgram.varColor)
         
-        
-        printPair(bigListNames,bigListAddrs,bigListColors)
-        sortedNames, sortedAddrs, sortedColors = sortTheBigList(bigListNames,bigListAddrs,bigListColors)
-        #short message about what color things are 
-        varout = colored("variables "+myProgram.varColor,myProgram.varColor)
-        funcout= colored("functions "+myProgram.funcColor,myProgram.funcColor) 
-        regsout = colored("regs " + myProgram.regColor, myProgram.regColor)
-        specregsout = colored("special registers " + myProgram.specialRegisterColor, myProgram.specialRegisterColor)
-        print(varout,funcout,regsout, specregsout)
-        #now print the full thing 
-        printPair(sortedNames,sortedAddrs,sortedColors)
-        myProgram.trackStacks.append([sortedNames, sortedAddrs, sortedColors])
-        # myProgram.everything =  [ [myProgram.programStack.both], 
-        #    [myProgram.programFuncs.funcInfo], [myProgram.programVariables.variableInfo]  ]
-        # count = 0
-        # for e in myProgram.everything:
-        #     print(count,e)
-        #     count +=1
-simplepprint()
+#         print("appended big list names, addrs, colors")
+#         for name in bigListNames:
+#             try:
+#                 #variable type with whatis
+#                 #out = gdb.execute(f"whatis {var}",to_string = True)
+#                 #self.getVariableType()
+#                 #print(f"{var}: {out}")
+#                 out = gdb.execute(f"print {name}",to_string = True)
+#                 o = out.split()
+#                 #o = o.replace("'",'')
+#                 #print(f"{var}: {out} o:{o} len: {len(o)}")
+#                 if(len(o)>3):
+#                     #remove ' and " characters
+#                     d1 = o[3].strip('\"')
+#                     datast =d1.replace("'",'')
+#                     print("this is a character")
+#                 #   print(print(f"{var}: {o[3][0]}"))
+#                 else:
+#                     #remove ' and " characters
+#                     d1 = o[2].strip('\"')
+#                     datast =d1.replace("'",'')
+#             #dont add data that has has not been initialized yet. 
+#                 print(f"datast: {datast}")
+#                 if(datast=='<error:'):
+#                    bigListData.append('null')    
+#                 #print(f"the datast for {var}: {datast} 0th_char: {datast[0]}")  
+#                 else: 
+#                     bigListData.append(datast)
+#             except gdb.MemoryError:
+#                 #print("some memerror, ignoring")
+#                 self.varDatas.append('null')
+#         
+#         print("before printpair")
+#         printPair(bigListNames,bigListAddrs,bigListColors,bigListData)
+#         print("after printpair")
+#         sortedNames, sortedAddrs, sortedColors = sortTheBigList(bigListNames,bigListAddrs,bigListColors)
+#         #short message about what color things are 
+#         varout = colored("variables "+myProgram.varColor,myProgram.varColor)
+#         funcout= colored("functions "+myProgram.funcColor,myProgram.funcColor) 
+#         regsout = colored("regs " + myProgram.regColor, myProgram.regColor)
+#         specregsout = colored("special registers " + myProgram.specialRegisterColor, myProgram.specialRegisterColor)
+#         print(varout,funcout,regsout, specregsout)
+#         #now print the full thing 
+#         printPair(bigListNames,bigListAddrs,bigListColors,bigListData)
+#         #SORTEDDATA GOES HERE
+#         myProgram.trackStacks.append([sortedNames, sortedAddrs, sortedColors])
+#         # myProgram.everything =  [ [myProgram.programStack.both], 
+#         #    [myProgram.programFuncs.funcInfo], [myProgram.programVariables.variableInfo]  ]
+#         # count = 0
+#         # for e in myProgram.everything:
+#         #     print(count,e)
+#         #     count +=1
+# simplepprint()
 
 
 class pprint (gdb.Command):
@@ -1094,11 +1150,14 @@ class pprint (gdb.Command):
     #this is what happens when they type in the command     
     def invoke(self, arg, from_tty):
         #need flag for all, gui, ...tui?
-
+        if(myProgram.mode =='complex'):
+            builderPrint()
+            return
         #need add extranious things like data and stuff
         bigListNames = []
         bigListAddrs = []
         bigListColors = []
+        bigListData = []
         #argString = arg.strip('').split('-')
         print("invoking pprint")
         gdb.execute('pfunc')
@@ -1162,14 +1221,47 @@ class pprint (gdb.Command):
             bigListColors.append(myProgram.varColor)
              
         #stat 
-        if(myProgram.mode != "default"):
+        if(myProgram.mode != "default"):# or myProgram.mode != "simple"):
             for i in range(len(myProgram.statHexInfo)):
                 bigListNames.append(myProgram.statWhatInfo[i])
                 bigListAddrs.append(myProgram.statHexInfo[i])
                 bigListColors.append("white")
+        for name in bigListNames:
+            try:
+                #variable type with whatis
+                #out = gdb.execute(f"whatis {var}",to_string = True)
+                #self.getVariableType()
+                #print(f"{var}: {out}")
+                out = gdb.execute(f"print {name}",to_string = True)
+                o = out.split()
+                #o = o.replace("'",'')
+                #print(f"{var}: {out} o:{o} len: {len(o)}")
+                if(len(o)>3):
+                    #remove ' and " characters
+                    d1 = o[3].strip('\"')
+                    datast =d1.replace("'",'')
+                    #print("this is a character")
+                #   print(print(f"{var}: {o[3][0]}"))
+                else:
+                    #remove ' and " characters
+                    d1 = o[2].strip('\"')
+                    datast =d1.replace("'",'')
+            #dont add data that has has not been initialized yet. 
+                #print(f"datast: {datast}")
+                if(datast=='<error:'):
+                   bigListData.append('null') 
+                elif(datast=='()}'):
+                   bigListData.append('function')       
+                #print(f"the datast for {var}: {datast} 0th_char: {datast[0]}")  
+                else: 
+                    bigListData.append(datast)
+            #except gdb.MemoryError or gdb.error:
+            except:
+                #print("some memerror, ignoring")
+                bigListData.append('')
             
-        printPair(bigListNames,bigListAddrs,bigListColors)
-        sortedNames, sortedAddrs, sortedColors = sortTheBigList(bigListNames,bigListAddrs,bigListColors)
+        printPair(bigListNames,bigListAddrs,bigListColors,bigListData)
+        sortedNames, sortedAddrs, sortedColors, sortedData = sortTheBigList(bigListNames,bigListAddrs,bigListColors,bigListData)
         #short message about what color things are 
         varout = colored("variables "+myProgram.varColor,myProgram.varColor)
         funcout= colored("functions "+myProgram.funcColor,myProgram.funcColor) 
@@ -1177,8 +1269,8 @@ class pprint (gdb.Command):
         specregsout = colored("special registers " + myProgram.specialRegisterColor, myProgram.specialRegisterColor)
         print(varout,funcout,regsout, specregsout)
         #now print the full thing 
-        printPair(sortedNames,sortedAddrs,sortedColors)
-        myProgram.trackStacks.append([sortedNames, sortedAddrs, sortedColors])
+        printPair(sortedNames,sortedAddrs,sortedColors,sortedData)
+        myProgram.trackStacks.append([sortedNames, sortedAddrs, sortedColors, sortedData])
         # myProgram.everything =  [ [myProgram.programStack.both], 
         #    [myProgram.programFuncs.funcInfo], [myProgram.programVariables.variableInfo]  ]
         # count = 0
@@ -1186,6 +1278,9 @@ class pprint (gdb.Command):
         #     print(count,e)
         #     count +=1
 pprint() 
+
+def builderPrint():
+    print("builder print")
 
 #modify the printpair cmd to do more than one per columns 
 class pAllStacks (gdb.Command):
@@ -1209,7 +1304,7 @@ class pAllStacks (gdb.Command):
         for stack in s:
             print(f"~~~~stack number {i}~~~~")
             i= i +1
-            printPair(stack[0],stack[1],stack[2])
+            #printPair(stack[0],stack[1],stack[2])
           
 pAllStacks()
 
@@ -1232,25 +1327,25 @@ def getColor(text):
             
             #textout = colored(text, keyRegColor)
     
-    # if(text[0]=='r'):
-    #     for key in keyRegs:
-    #         #print(key,text[1:])
-    #         if(text[1:] == key):
-    #         #textout = colored(text, keyRegColor)
-    #             return 'red'
+    if(text[0]=='r'):
+        for key in keyRegs:
+            #print(key,text[1:])
+            if(text[1:] == key):
+            #textout = colored(text, keyRegColor)
+                return 'red'
             
-    #     return 'magenta'
+        return 'magenta'
 
-    # #this is a function
-    # if(text[0]=='f'):
-    #     #textout = colored(text, keyFuncColor)
-    #     return keyFuncColor
-    # #this is a variable
-    # if(text[0]=='v'):
-    #    # textout = colored(text, keyVarColor)
-    #     return keyVarColor
+    #this is a function
+    if(text[0]=='f'):
+        #textout = colored(text, keyFuncColor)
+        return keyFuncColor
+    #this is a variable
+    if(text[0]=='v'):
+       # textout = colored(text, keyVarColor)
+        return keyVarColor
 from termcolor import colored
-def printPair(names,addrs,colors):
+def printPair(names,addrs,colors,data):
     
     const = 20
     print("---------------------------")
@@ -1262,11 +1357,13 @@ def printPair(names,addrs,colors):
         spaceString = " "
         for j in range(const-(nameSize)):
             spaceString = spaceString + " "
-        
-        out = colored(f"{names[i]}{spaceString}{addrs[i]}",colors[i])
+        if(data == ""):
+            out = colored(f"{names[i]}{spaceString}{addrs[i]}",colors[i])
+        else:
+            out = colored(f"{names[i]}{spaceString}{addrs[i]}     {data[i]}",colors[i])
         print(out)
 
-def sortTheBigList(reglist, regaddrs,colors):
+def sortTheBigList(reglist, regaddrs,colors, data):
     #regaddrs = self.registerAddresses 
     #reglist = self.registerNames
     
@@ -1291,7 +1388,10 @@ def sortTheBigList(reglist, regaddrs,colors):
                     tmpcolor = colors[i] 
                     colors[i] = colors[j]
                     colors[j] = tmpcolor
-    return reglist, regaddrs, colors
+                    tmpdata = data[i]
+                    data[i] = data[j]
+                    data[j] = tmpdata
+    return reglist, regaddrs, colors, data
 
 
 #debug
