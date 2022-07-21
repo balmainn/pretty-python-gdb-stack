@@ -1,0 +1,15 @@
+import re 
+from termcolor import colored
+
+star = ["some_string", "some2", "some3", "Some_4"]
+for i in range(len(star)):
+    for j in range(len(star[i])):
+        if(star[i][j] == '_'):
+            print("underscore")
+
+o1 = colored("test1", 'red')
+o2 = "blarg"
+#o3 = colored("test3", 'blue',attrs=['bold'])
+o3 = colored("test3", 'blue')
+t = o1+o2+o3 
+print(t)

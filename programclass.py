@@ -19,11 +19,12 @@
 #have a visual toggle siwtch between gui and text maybe a prompt like "would you like to enable visual mode?"
 
 
+from audioop import add
 import re
 import os
 
 
-
+#heap class doesnt really do anything right now but may be utilized upon further development of this program.
 class Heap:
     def __init__(self) -> None:
         self.heapRegisterAddresses =  []
@@ -74,25 +75,31 @@ def testPrint(names, addrs):
         print(f"{names[i]}{spaceString}{addrs[i]}")
    
 
+#the class stack contains all the information about the stack at a given point in the program.
 class Stack:
     def __init__(self) -> None:
-            
+        #containers that hold register addresses as well as their name (eip, edx, etc.)
         self.stackRegisterAddresses =  []
         self.stackRegisterNames = []
         self.both = [self.stackRegisterNames,self.stackRegisterAddresses]
-        
+        #the start and end locations for stack data
         self.dataStart = 0
         self.dataEnd = 0
+        #cdefault register color and default special reg color
         self.regColor = 'white'
         self.specialRegColor = 'red'
+        self.boundryColor = 'yellow'
         #need to do something with this 
         self.bottomOfStack = "0x00000000"
         #we have not added anything to the stack on creation 
-        self.stackInit = 0
+        #this should be used to tell if the stack has been initialized for builder mode (probably?) rethere
+        self.stackInit = 0 
         # if(len(self.stackRegisterAddresses) == 0):
         #     self.stackInit == 0
         # else:
         #     self.stackInit == 1
+
+    #function to add registers to their appropriate container 
     def addReg(self, regName,regAddress):
         
         self.stackRegisterAddresses.append(regAddress)
@@ -100,6 +107,8 @@ class Stack:
         self.stackInit = 1
         self.both.clear()
         self.both = [self.stackRegisterNames,self.stackRegisterAddresses]
+
+    #simple sorting function that sorts the registers by their address.    
     def sortRegs(self):
         
         regaddrs = self.both[1]
@@ -118,11 +127,11 @@ class Stack:
                     reglist[j] = templist
         self.both.clear()
         self.both = [reglist,regaddrs]
+    
+    #prints all stack registers
     def printAll(self):
         print("printing stack")
-        regColors =['white'] * len(self.stackRegisterAddresses)
-
-            
+        regColors =['white'] * len(self.stackRegisterAddresses)        
         printPair(self.stackRegisterNames,self.stackRegisterAddresses,regColors, "")
         # self.printPretty()
         # self.sortRegs()
@@ -164,6 +173,8 @@ class Stack:
         #print(self.stackRegisterAddresses,self.stackRegisterNames)
         #self.printAll()
         #print("everything added")
+    #get important info from the current frame    
+
     def getFrameInfo(self):
         eip_savedEip_regex = "0x\w+"
         frameStr = gdb.execute('info frame', to_string = True)
@@ -211,7 +222,7 @@ class Stack:
             frameRegNames.append("frame_eip")
         if frame_saved_eip:
             frameRegs.append(frame_saved_eip)
-            frameRegNames.append("frame_saved_eip")
+            frameRegNames.append("saved_eip")
         if arglist:
             frameRegs.append(arglist)
             frameRegNames.append("arglist")
@@ -227,6 +238,8 @@ class Stack:
         #     self.addReg(frameRegNames[i],frameRegs[i])
         return frameRegNames, frameRegs
     
+#function that reloads this file into gdb with any changes. 
+# is not useful unless editing this file directly.     
 class resource (gdb.Command):
     """reload this file, with changes"""
     def __init__(self):
@@ -248,19 +261,23 @@ class whatCommands (gdb.Command):
         gdb.execute("show commands")
 
 whatCommands()
+
+#class of the functions inside a program, for example main
 class Func:
 
     def __init__(self):
+        #containers 
         self.functionsName = []
         self.functionsLine = []
         self.functionsAddr = []
         self.funcInfo = [self.functionsName,self.functionsLine,self.functionsAddr]
 
-
+    #function that retreives all functions from the currently running program
     def getAllFunctions(self):
         o = gdb.execute('info functions', to_string = True)
         s = o.splitlines()
         #print(s)
+        #regex soup
         nbs = 'Non-debugging symbols:'
         ctr = 0
         getFuncNameRE = ' .*\('
@@ -289,6 +306,8 @@ class Func:
         funcAddrs = self.getFuncAddrs(funcNames)
         #print("func addrs: ",funcAddrs)
         return funcNames, funcNumbers, funcAddrs
+    
+    #get the function address    
     def getFuncAddrs(self,funcNames):
         funcAddrs = []
         for name in funcNames:
@@ -300,10 +319,13 @@ class Func:
         #    print(f"name: {name} out: {out}")
         #print("funcaddrs:", funcAddrs)
         return funcAddrs
+    #helper function that populates the function class containers.     
     def populateFunctions(self):
         self.functionsName, self.functionsLine,  self.functionsAddr = self.getAllFunctions()
         self.funcInfo = [self.functionsName,self.functionsLine,self.functionsAddr]
         #print("populated: ", self.functionsName, self.functionsLine,  self.functionsAddr) 
+    
+    #print the information stored in the containes (the line the function is on, its name, and its address)
     def printAll(self):
         #convert this into a variable that is easier to understand
         print("printing functions")
@@ -365,9 +387,12 @@ class changeColor (gdb.Command):
 changeColor()
  # command to check valid mode    
 
+#the primary class of this program. 
+#the program class is the premary mechanism for storing, retrieving, and interacting with the various parts of the running program. 
 class Program:
 
     def __init__(self):   
+        #programs have a stack, a heap, functions, and variables.
         self.programStack = Stack()
         self.programHeap = Heap()
         self.programFuncs = Func()
@@ -390,13 +415,15 @@ class Program:
         self.defaultColor = "white"
 
         self.programMode = ""
+        #the executable and filepath of the program.
         self.executable =""
         self.filepath = ""
         #PID = getPID()
         
         #arrray of functions... 
-        
+        #program's process ID 
         self.PID = 0
+        
         self.variableNames = []
         self.variableAddresses = []
         self.variableBoth = [self.variableNames,self.variableAddresses]
@@ -420,9 +447,21 @@ class Program:
         self.everything = [ [self.programHeap.heapBoth], [self.programStack.both], [self.programFuncs.functionsAddr], [self.variableBoth]   ]
         self.trackStacks = []
         print("__init__")
+        #retrieve the program's PID, filepath, and executable path. 
         self.getPID()
         self.getProgramFilePath()
-
+        self.sortedAddrs = [] 
+        self.sortedNames = []
+        self.sortedColors = []
+    def addSorted(self, ssortedAddrs, ssortedNames, sortedColors):
+        print(f"insorted: {ssortedAddrs}")
+        for a in ssortedAddrs:
+        
+            self.sortedAddrs.append(a)
+        for n in ssortedNames:
+            self.sortedNames.append(n)
+        self.sortedColors = sortedcolors
+    #change the output color.
     def changeColor(self, color, t):
         print(f"recieved: {color} {t}")
         try: 
@@ -446,7 +485,7 @@ class Program:
             print(f"invalid color option {color}")
             
         print(out)
-
+    #get the program filepath
     def getProgramFilePath(self):
         out = gdb.execute("info line",to_string = True)
         fileregex = "\".+\""
@@ -456,7 +495,8 @@ class Program:
         #print(filename[0:-2])
         self.filepath = filename
         self.executable = filename[0:-2]
-        
+    #get the running program's process ID
+    #this starts debugging leaving it on the first line of main. 
     def getPID(self):
         gdb.execute('b main')
         gdb.execute('r')
@@ -464,10 +504,12 @@ class Program:
         print(out[8:-1])
         pid = out[8:-1]
         self.PID = pid
+    #<<TODO>> sort all of these things (maybe just use sorthebiglist or something)    
     def sortAll(self):
         #sort these methods
         self.everything = [ [self.programHeap.heapBoth], [self.programStack.both], [self.programFuncs.functionsAddr], [self.variableBoth]   ]
 
+    #retrieve things from /proc/$PID/stat
     def getThingsFromStat(self):
         
         procnospace = isGDBRunningpy()
@@ -507,11 +549,12 @@ class Program:
         self.statWhatInfo = whatInfo
         #return whatInfo, hexinfo
         #print(f"info: {info}")
-
+    #print information from that file in a better format so we can read it. 
     def printStatInfo(self):
         for i in range(len(self.statHexInfo)):
             print(f"{i} {self.statWhatInfo[i]} {self.statHexInfo[i]}")
 
+    #find the range of the program's stack and heap, if heap is being used. 
     def getStackHeapRangeFromMaps(self):
         PID = isGDBRunningpy()
         if(not PID):
@@ -562,11 +605,12 @@ class Program:
 #variables of a program
 class Variables:
     def __init__(self):  
+        #containers
         self.varNames = []
         self.varAddrs = []
         self.varDatas = []
         self.variableInfo = [self.varNames,self.varAddrs,self.varDatas]
-
+    #sorting variables by their address 
     def sort(self):
         #print('sorting')
         #print(self.varAddrs)
@@ -588,7 +632,7 @@ class Variables:
                     datas[i] = datas[j]
                     datas[j] = tempdata
         
-        
+    #print the variables and their information    
     def printAll(self):
         print("printing variables")
         const = 10
@@ -601,11 +645,14 @@ class Variables:
                 spaceString = spaceString + " "
             #print(self.varNames[i], self.varAddrs[i], self.varDatas[i])
             print(f"{self.varNames[i]}{spaceString}{self.varAddrs[i]}{spacestring2}{self.varDatas[i]}")
-        
+    #<<TODO>>    
     def getVariableType(varstring):
         #if(varString ==)
         pass
-
+    #function obtains all variable names, addresses, and data in the current frame
+    #in addition to all variables that the running program might use. 
+    #this will gather whatever information is there, garbage or not. Overflow or not. 
+    #this is intended behavior. 
     def getLocalVariables(self):
         self.varNames.clear()
         self.varAddrs.clear()
@@ -669,6 +716,7 @@ class Variables:
         #dont need to return...?
         return localVariableNames, localVarAddresses
 
+    #this will gather all of the variables for the entire program, but not the data.
     def gatherAllVariables():
         
         allVariableNames = []
@@ -691,13 +739,14 @@ class Variables:
             except:
                 pass
         return allVariableNames, allVariableAddresses
-
+    #print all of the variable names along with their addresses
     def printAllVars(self):
         allVariableNames = self.varNames
         allVariableAddresses = self.varAddrs
         for i in range(len(allVariableNames)):
             print( allVariableNames[i], allVariableAddresses[i])
-
+    
+    #update the location of the variable on the stack regardless of whether or not it has actually moved. 
     def updateVariables(allVariableNames,allVariableAddresses):
         #for var in allVariableNames:
         for i in range(len(allVariableNames)):
@@ -723,6 +772,7 @@ class Variables:
                 #print(f"{var} not in scope, nothing to do")
                 pass
         return allVariableNames, allVariableAddresses
+#gdb command for printing all variables       
 class pvars (gdb.Command):
     """find and print the variables known at the current point"""
     def __init__(self):
@@ -741,9 +791,12 @@ class pvars (gdb.Command):
             print("not debugging, please run before using.")
 pvars() 
 
+#<<TODO>>
+#invoke the printALl method regardless of what is passed in. 
 def printObject(obj):
     obj.printAll()
 
+#gdb command to print information from the stat file. 
 class pstat (gdb.Command):
     """print information from proc/$pid/stat"""
     def __init__(self):
@@ -757,6 +810,7 @@ class pstat (gdb.Command):
             myProgram.printStatInfo()
 pstat() 
 
+#gdb command to print information from the maps file 
 class pmaps (gdb.Command):
     """print informtaion from proc/$pid/maps"""
     def __init__(self):
@@ -771,6 +825,7 @@ class pmaps (gdb.Command):
         
 pmaps() 
 
+#<<TODO>>?
 class pprogram (gdb.Command):
     """the big print program, need more docstring"""
     def __init__(self):
@@ -787,7 +842,9 @@ class pprogram (gdb.Command):
         print((gdb.selected_inferior()))
 pprogram() 
 
-#need to do something with this rethere
+
+#find out of gdb is running a current program or not 
+#not really used <<TODO>>
 class isGDBRunning (gdb.Command):
     """figure out if gdb is running or not"""
     def __init__(self):
@@ -804,6 +861,7 @@ class isGDBRunning (gdb.Command):
             return 1
 isGDBRunning()
 
+#function that determines if GDB is running an inferior program (is it currently running a program)
 def isGDBRunningpy():
         pid =  (gdb.selected_inferior().pid)
         if(pid<=0):
@@ -815,6 +873,7 @@ def isGDBRunningpy():
 
 
 #####~~~~~MAIN~~~~~#####
+#declare objects so this file can start collecting information
 #define like this for ease of use later
 myProgram = Program()
 myProgramStack = myProgram.programStack
@@ -822,11 +881,13 @@ myProgramHeap = myProgram.programHeap
 myProgramFunctions = myProgram.programFuncs
 myProgramVariables = myProgram.programVariables
 
+#print welcome message
 print("welcome to PPGDB")
 print("the executable is currently running and a breakpoint has been set in main.")
 print("all program modules begin with the letter p.")
 print("to see available modules use \"help pprint\"")
 
+#myProgramStack.getFrameInfo()
 #printObject(myProgramStack)
 
 #RET TESTING
@@ -847,12 +908,12 @@ print("to see available modules use \"help pprint\"")
 # print(f"both: {b[0][2]} {b[1][2]}")
 
 
-
-
+#<<TODO>> depricated? 
 def printRegisters(regaddrs, reglist):
     for i in range (len(regaddrs)):
         print(f"{regaddrs[i]} {reglist[i]}")
 
+#gdb command that will print stack registers including certain things from info frame and stat/maps
 class pstack (gdb.Command):
     """print the stack registers known at the current point"""
     def __init__(self):
@@ -871,6 +932,8 @@ class pstack (gdb.Command):
             print("not debugging, please run before using.")
         
 pstack() 
+
+#gdb command to print all functions. 
 class pfunc (gdb.Command):
     """print the functions known to the program at the current point"""
     def __init__(self):
@@ -886,6 +949,8 @@ class pfunc (gdb.Command):
             myProgramFunctions.printAll()
 
 pfunc()
+
+#redirects pfuncs to pfunc in case of typo.
 #this would cause confusion, so just forward it to pfunc
 class pfuncs (gdb.Command):
     """calls pfunc"""
@@ -900,16 +965,96 @@ class pfuncs (gdb.Command):
 pfuncs()
 #we can abuse the vars() function with .get('key') it does not get updated when changed though.
     #thing = vars(myProgram).get('PID')
+#<<TODO>> print the top x addresses of stack, maybe i can use this for something else down the road. 
+# retheremostcurrent    
 class psp (gdb.Command):
-    """print the top 10 addresses of the stack"""
+    """print the top n addresses of the stack
+    if no argument is used, it will print the top 100 addresse """
+    #<<TODO>> make color useful and give the user the ability to tweak the number of lines printed 
     def __init__(self):
                                  #cmd user types in goeshere
         super(psp,self).__init__("psp",gdb.COMMAND_USER)
     #this is what happens when they type in the command     
     def invoke(self, arg, from_tty):
         print("invoking psp") 
-        gdb.execute('x/10x $sp')
+        gdb.execute("pprint")
+        #gdb.execute('x/10x $sp')
+        if(len(arg)>0):
+            out = gdb.execute(f'x/{arg}x $sp',to_string = True)
+        else:
+            out = gdb.execute('x/100x $sp',to_string = True)
+        #this is going to be very bad. 
+        
+        addrs = myProgram.sortedAddrs 
+        #print(f"addrs: {addrs}")
+        names = myProgram.sortedNames
+        #print(f"names: {names}")
+        colors = myProgram.sortedColors
+        
+        #addrs = myProgramStack.stackRegisterAddresses 
+        #names = myProgramStack.stackRegisterNames
+        #for addr in addrs:
+        m2 = out   
+        for i in range(len(addrs)): 
+            
+            #o2 = out.replace()
+            try:
+                m = re.search(addrs[i],out)
+                m2 = re.sub(addrs[i],addrs[i]+"_" +names[i],m2)
+                #print(f"{m.group(0)}, {names[i]}")
+         #       print(m2)
+            except:
+                print("exception")
+                pass    
+        out2 = m2.splitlines()
+        const = 35
+        printout =""
+        count = 0
+        for o in out2:
+            
+            word = o.split()
+            #make print output look pretty by messing with space string, and yeah uh ok
+           # print(word)
+            for i in range(len(word)):
+                allout = []
+                #fix this better later <<TODO>>
+                found = False
+                nameSize = len(word[i])
+                spaceString = " "
+                for j in range(const-(nameSize)):
+                    spaceString = spaceString + " "
+
+                for k in range(len(word[i])):
+                    #print(word[i][k])
+                    if(word[i][k]=='_'):
+                        printout = printout + colored(word[i]+spaceString,"red")
+                       
+                        found = True
+                        break
+                if(not found):
+                    printout = printout + word[i]+spaceString
+                    
+                #print(f"lenword: {len(word[i])}")
+            #print(f"{names[i]}{' '.ljust(10)}{addrs[i]}")
+               
+                # if(found):
+                #     printout = colored(printout +word[i]+spaceString,"red")
+                #     found = False
+            print(printout)    
+            printout =""
+        # for i in range(len(addrs)):
+        #     print(addrs, names)
+        
+        # #o = out.split('\t')
+        # o = re.split('\t|\n',out)
+        # o2 = []
+        # for line in o:
+        #     o2.append(line.strip(':'))
+        #     print(line)
+        # print(o2)
+        #print(o)
 psp()
+
 
 #i dont know why there is a difference between what is reported in stat and map
 class ptest (gdb.Command):
@@ -1187,8 +1332,8 @@ class pprint (gdb.Command):
         bigListAddrs.append(myProgram.mapStackBottom)
         bigListNames.append("map_stack_top")
         bigListAddrs.append(myProgram.mapStackTop)
-        bigListColors.append("white")
-        bigListColors.append("white")
+        bigListColors.append(myProgramStack.boundryColor)
+        bigListColors.append(myProgramStack.boundryColor)
         print("finished appending mapstack")
         #automated stuff 
         #stack registers
@@ -1260,6 +1405,15 @@ class pprint (gdb.Command):
                 #print("some memerror, ignoring")
                 bigListData.append('')
             
+            boundryList = ["esp", "saved_frame_ebp", "previous_sp"]
+            for i in range(len(bigListNames)):
+                for b in boundryList:
+                    if (bigListNames[i] == b ):
+                        bigListColors[i] = myProgramStack.boundryColor 
+            for i in range(len(bigListNames)):
+                
+                if (bigListNames[i] == 'saved_eip' or bigListNames[i] == 'previous_sp'  ):
+                    bigListColors[i] = 'magenta' 
         printPair(bigListNames,bigListAddrs,bigListColors,bigListData)
         sortedNames, sortedAddrs, sortedColors, sortedData = sortTheBigList(bigListNames,bigListAddrs,bigListColors,bigListData)
         #short message about what color things are 
@@ -1267,7 +1421,8 @@ class pprint (gdb.Command):
         funcout= colored("functions "+myProgram.funcColor,myProgram.funcColor) 
         regsout = colored("regs " + myProgram.regColor, myProgram.regColor)
         specregsout = colored("special registers " + myProgram.specialRegisterColor, myProgram.specialRegisterColor)
-        print(varout,funcout,regsout, specregsout)
+        stackboundry = colored("stack boundry "+myProgramStack.boundryColor, myProgramStack.boundryColor)
+        print(varout,funcout,regsout, specregsout, stackboundry)
         #now print the full thing 
         printPair(sortedNames,sortedAddrs,sortedColors,sortedData)
         myProgram.trackStacks.append([sortedNames, sortedAddrs, sortedColors, sortedData])
@@ -1277,6 +1432,11 @@ class pprint (gdb.Command):
         # for e in myProgram.everything:
         #     print(count,e)
         #     count +=1
+        myProgram.sortedAddrs = sortedAddrs
+        myProgram.sortedNames = sortedNames
+        myProgram.sortedColors = sortedColors
+        #myProgram.addSorted(sortedAddrs,sortedNames,sortedColors)
+        
 pprint() 
 
 def builderPrint():
@@ -1345,6 +1505,8 @@ def getColor(text):
        # textout = colored(text, keyVarColor)
         return keyVarColor
 from termcolor import colored
+
+#this method prints things nicely. 
 def printPair(names,addrs,colors,data):
     
     const = 20
@@ -1358,11 +1520,17 @@ def printPair(names,addrs,colors,data):
         for j in range(const-(nameSize)):
             spaceString = spaceString + " "
         if(data == ""):
-            out = colored(f"{names[i]}{spaceString}{addrs[i]}",colors[i])
+            if (names[i]== 'saved_eip' or names[i]=='previous_sp'):
+                out = colored(f"{names[i]}{spaceString}{addrs[i]}",colors[i], attrs=['bold'])
+            else:
+                out = colored(f"{names[i]}{spaceString}{addrs[i]}",colors[i])
         else:
             out = colored(f"{names[i]}{spaceString}{addrs[i]}     {data[i]}",colors[i])
         print(out)
 
+#sorts the big list of the stack/heap/registers, basically whatever you give it .
+#if effeciency becomes a concern, revisit this function and use a better sorting alg. 
+#Merge Sort is one that is tempting to use based on the nature of this program. 
 def sortTheBigList(reglist, regaddrs,colors, data):
     #regaddrs = self.registerAddresses 
     #reglist = self.registerNames
