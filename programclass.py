@@ -1243,7 +1243,7 @@ changemode()
 #         #     count +=1
 # simplepprint()
 
-
+#<<TODO>> make saved_EIP point to eip register as data 
 class pprint (gdb.Command):
     """run all p commands and hope for the best
     <copy paste information for all functions here>  gdb.execute('pfunc')
@@ -1393,11 +1393,14 @@ class pprint (gdb.Command):
                     datast =d1.replace("'",'')
             #dont add data that has has not been initialized yet. 
                 #print(f"datast: {datast}")
+                print("datast: ", datast)
                 if(datast=='<error:'):
                    bigListData.append('null') 
                 elif(datast=='()}'):
                    bigListData.append('function')       
                 #print(f"the datast for {var}: {datast} 0th_char: {datast[0]}")  
+                elif(datast==''):
+                    bigListData.append('')
                 else: 
                     bigListData.append(datast)
             #except gdb.MemoryError or gdb.error:
@@ -1406,14 +1409,34 @@ class pprint (gdb.Command):
                 bigListData.append('')
             
             boundryList = ["esp", "saved_frame_ebp", "previous_sp"]
-            for i in range(len(bigListNames)):
-                for b in boundryList:
-                    if (bigListNames[i] == b ):
-                        bigListColors[i] = myProgramStack.boundryColor 
-            for i in range(len(bigListNames)):
+        for i in range(len(bigListNames)):
+            for b in boundryList:
+                if (bigListNames[i] == b ):
+                    bigListColors[i] = myProgramStack.boundryColor 
+        
+        for i in range(len(bigListNames)):
+         #   print(f"bigdata: {i}  {bigListData[i]}")
+        #print(len(bigListData))            
+            if (bigListNames[i] == 'saved_eip'):
+                bigListColors[i] = 'magenta' 
                 
-                if (bigListNames[i] == 'saved_eip' or bigListNames[i] == 'previous_sp'  ):
-                    bigListColors[i] = 'magenta' 
+                
+                for j in range(len(bigListData)):
+                    if(bigListNames[j] == 'eip'):
+                        bigListData[i] = 'eip_'+bigListAddrs[j]
+                        print("eip has been found")
+                        break
+            if( bigListNames[i] == 'previous_sp'  ):
+                bigListColors[i] = 'magenta'   
+                out = gdb.execute('p $sp',to_string = True)
+                try:
+                    m = re.search('0x\w+',out)
+                    spAddr = m.group(0)
+                    bigListData[i] = "$sp_"+spAddr
+                except:
+                    pass
+
+
         printPair(bigListNames,bigListAddrs,bigListColors,bigListData)
         sortedNames, sortedAddrs, sortedColors, sortedData = sortTheBigList(bigListNames,bigListAddrs,bigListColors,bigListData)
         #short message about what color things are 

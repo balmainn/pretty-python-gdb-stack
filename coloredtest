@@ -7,7 +7,7 @@ for i in range(len(star)):
         if(star[i][j] == '_'):
             print("underscore")
 
-o1 = colored("test1", 'red')
+o1 = colored("test1", 'red')   
 o2 = "blarg"
 #o3 = colored("test3", 'blue',attrs=['bold'])
 o3 = colored("test3", 'blue')
