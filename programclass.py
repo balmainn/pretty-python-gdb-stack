@@ -192,9 +192,20 @@ class Stack:
         frame_eip = m[0]
         frame_saved_eip = m[1]
         m = re.findall(eip_savedEip_regex, frameArr[3]) #,4,6
+        frameRegs = []
+        frameRegNames = []
+        try: 
+            m3 = re.search("argv=\w+",frameArr[3])
+            #print("m3group: ", m3.group(0))
+            argv = m3.group(0)[5:]
+           # print("argv: ", argv)
+            frameRegs.append(argv)
+            frameRegNames.append("argv")
+        except:
+            pass
         arglist = []
         if m:
-            #print(m)
+            print(f" arglist m: {m}")
             arglist = m[0]
         #print("11-12char: ",frameArr[4][11:12])
         #if the address is unknown, skip it. 
@@ -209,9 +220,9 @@ class Stack:
         m = re.findall(eip_savedEip_regex, frameArr[6]) #,4,6
         #print(m)
         m2 = re.findall("e\D\D",frameArr[6])
+
         #print(m2)
-        frameRegs = []
-        frameRegNames = []
+        
         for reg in m:
             frameRegs.append(reg)
         for reg in m2:
@@ -653,12 +664,36 @@ class Variables:
     #in addition to all variables that the running program might use. 
     #this will gather whatever information is there, garbage or not. Overflow or not. 
     #this is intended behavior. 
+    def getGlobalVariables(self):
+        print("getGlobalVariables")
+        out = gdb.execute('info variables', to_string = True)
+        globalVarRegex = "\w+;$"
+        lines = out.splitlines()
+        globalvarnames = []
+        #variable names
+        for line in lines:
+        #print(line)
+            try:
+                m = re.search(globalVarRegex,line)
+            #    print(m.group(0))
+                globalvarnames.append(m.group(0))
+                self.varNames.append(m.group(0))
+            except:
+                pass
+        #m = re.findall(globalVarRegex,out)
+        m = re.search(globalVarRegex,out)
+        print(m.group(0))
+        for var in m:
+            print(var[-1:])
     def getLocalVariables(self):
         self.varNames.clear()
         self.varAddrs.clear()
         self.varDatas.clear()
+        #self.getGlobalVariables()
         #variable names are the first grouping of "words" at the beginning 
         out = gdb.execute('info locals', to_string = True)
+        out2 = gdb.execute('info variables', to_string = True)
+        globalVarRegex = "\w+;$"
         localVariableNames = []
         localVarAddresses = []
         variableRegex = "^\w+"
@@ -668,9 +703,19 @@ class Variables:
         #print(line)
             try:
                 m = re.search(variableRegex,line)
-            #    print(m.group(0))
                 localVariableNames.append(m.group(0))
                 self.varNames.append(m.group(0))
+            except:
+                pass
+        lines = out2.splitlines()    
+        for line in lines:
+        #print(line)
+            try:
+                m = re.search(globalVarRegex,line)
+                print(m.group(0)[:-1])
+                localVariableNames.append(m.group(0)[:-1])
+                self.varNames.append(m.group(0)[:-1])
+                
             except:
                 pass
             #print(variableNames)
@@ -790,6 +835,15 @@ class pvars (gdb.Command):
         else:
             print("not debugging, please run before using.")
 pvars() 
+class pglobalvars (gdb.Command):
+    """find and print the variables known at the current point"""
+    def __init__(self):
+                                 #cmd user types in goeshere
+        super(pglobalvars,self).__init__("pgv",gdb.COMMAND_USER)
+    #this is what happens when they type in the command     
+    def invoke(self, arg, from_tty):
+        myProgramVariables.getLocalVariables()
+pglobalvars() 
 
 #<<TODO>>
 #invoke the printALl method regardless of what is passed in. 
@@ -860,6 +914,16 @@ class isGDBRunning (gdb.Command):
             print(f"i am running, my pid is: {pid}")
             return 1
 isGDBRunning()
+class pinfoframe (gdb.Command):
+    """figure out if gdb is running or not"""
+    def __init__(self):
+                                 #cmd user types in goeshere
+        super(pinfoframe,self).__init__("pif",gdb.COMMAND_USER)
+    #this is what happens when they type in the command     
+    def invoke(self, arg, from_tty):
+        print("invoking pinfoframe")
+        myProgramStack.getFrameInfo()
+pinfoframe()
 
 #function that determines if GDB is running an inferior program (is it currently running a program)
 def isGDBRunningpy():
@@ -1396,7 +1460,7 @@ class pprint (gdb.Command):
                 print("datast: ", datast)
                 if(datast=='<error:'):
                    bigListData.append('null') 
-                elif(datast=='()}'):
+                elif(datast=='()}' or datast=='(int)}' or datast=='(int,'):
                    bigListData.append('function')       
                 #print(f"the datast for {var}: {datast} 0th_char: {datast[0]}")  
                 elif(datast==''):
@@ -1413,14 +1477,25 @@ class pprint (gdb.Command):
             for b in boundryList:
                 if (bigListNames[i] == b ):
                     bigListColors[i] = myProgramStack.boundryColor 
+        for i in range(len(bigListNames)):
+            if (bigListNames[i] == "argv" ):
+                bigListColors[i] = myProgram.varColor 
         
         for i in range(len(bigListNames)):
          #   print(f"bigdata: {i}  {bigListData[i]}")
-        #print(len(bigListData))            
+        #print(len(bigListData))     
+            if (bigListNames[i] == 'saved_frame_ebx'):
+                bigListColors[i] = 'white'       
+                for j in range(len(bigListData)):
+                    if(bigListNames[j] == 'ebx'):
+                        bigListData[i] = 'ebx_'+bigListAddrs[j]
+                        bigListData[j] = 'saved_ebx_'+bigListAddrs[i]
+                        print("eip has been found")
+                        break
+
             if (bigListNames[i] == 'saved_eip'):
                 bigListColors[i] = 'magenta' 
-                
-                
+                  
                 for j in range(len(bigListData)):
                     if(bigListNames[j] == 'eip'):
                         bigListData[i] = 'eip_'+bigListAddrs[j]

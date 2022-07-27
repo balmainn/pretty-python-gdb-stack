@@ -1,6 +1,7 @@
 dependencies for development /use 
     pip
     pip install tk 
+    pip install termcolor
     sudo apt-get install gcc-multilib 
     sudo apt-get install python3-tk  ?
     pip install python-dev-tools
