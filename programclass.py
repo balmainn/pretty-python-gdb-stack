@@ -17,9 +17,23 @@
 #import statements for gui (pyqt6 etc) should ONLY be in that function (hopefully so people that dont want/need to use gui dont need to install pyqt6)
 #display things that have data
 #have a visual toggle siwtch between gui and text maybe a prompt like "would you like to enable visual mode?"
+#i dont know why there is a difference between what is reported in stat and map
+#ESP is the stack pointer for the system stack, changes when data is pushed or popped from stack 
+#ebp is points to the base
+#General registers
+# EAX EBX ECX EDX
+# Segment registers
+# CS DS ES FS GS SS
+# Index and pointers
+# ESI EDI EBP EIP ESP
+# Indicator
+# EFLAGS
 
 
-from audioop import add
+
+
+
+
 import re
 import os
 
@@ -166,7 +180,13 @@ class Stack:
         #        print(f"{regsize} {line} \n")
                 self.addReg(name,addr)
                 regsize = regsize +1
+        print("before frame info")
         frameNames, frameRegs = self.getFrameInfo()
+        print("after frame info")
+        #$sp is the same thing as esp
+        # spstring = gdb.execute('x $sp',to_string = True)
+        # print(spstring[:10])
+        # self.addReg("$sp",spstring[:10])
         for i in range(len(frameNames)):
             self.addReg(frameNames[i],frameRegs[i])
         #test print
@@ -181,7 +201,8 @@ class Stack:
         if frameStr == "No Stack":
             return
         frameArr = frameStr.splitlines()
-        if(0):
+        
+        if(1):
             for i in range(len(frameArr)):
                 print(i, frameArr[i])
         
@@ -211,22 +232,33 @@ class Stack:
         #if the address is unknown, skip it. 
         stored_locals = []
         previous_sp = []
-        if frameArr[4][11:12] != 'u':
-            m = re.findall(eip_savedEip_regex, frameArr[4]) #,4,6
+        #if frameArr[4][11:12] != 'u':
+        m = re.findall(eip_savedEip_regex, frameArr[4]) #,4,6
+        #print(f"previous sp and stored locals {m} {frameArr[4]}")
+        if(len(m)==2):
             stored_locals = m[0]
             previous_sp = m[1]
             print(m)
+        if(len(m)==1):
+            #stored_locals = m[0]
+            previous_sp = m[0]
+            print(m)    
         #add saved registers to array!
         m = re.findall(eip_savedEip_regex, frameArr[6]) #,4,6
         #print(m)
-        m2 = re.findall("e\D\D",frameArr[6])
+        m2 = re.findall("e\D\D ",frameArr[6])
 
         #print(m2)
         
         for reg in m:
+            print(f"adding: {reg}")
             frameRegs.append(reg)
+        
         for reg in m2:
-            frameRegNames.append("saved_frame_"+reg)
+            #print(f"adding name {reg[:-1]}")
+            #[:-1] just to get rid of the space at the end. 
+            frameRegNames.append("saved_"+reg[:-1])
+         
         #print(frameRegs, frameRegNames)
         if frame_eip:
             frameRegs.append(frame_eip)
@@ -243,7 +275,9 @@ class Stack:
         if previous_sp:
             frameRegs.append(previous_sp)
             frameRegNames.append("previous_sp")
+        print('before printRegisters')
         printRegisters(frameRegNames,frameRegs)
+        print("after printRegisters")
         # for i in range(len(frameRegNames)):
         #     print(f"{i} {frameRegNames[i]} {frameRegs[i]}")
         #     self.addReg(frameRegNames[i],frameRegs[i])
@@ -472,6 +506,7 @@ class Program:
         for n in ssortedNames:
             self.sortedNames.append(n)
         self.sortedColors = sortedcolors
+  
     #change the output color.
     def changeColor(self, color, t):
         print(f"recieved: {color} {t}")
@@ -752,6 +787,9 @@ class Variables:
                 print(f"datast: {datast}")
                 if(datast=='<error:'):
                     self.varDatas.append('null')    
+                #<incomplete questionable <<TODO>>
+                # if(datast=='<incomplete'):
+                #     self.varDatas.append('memory')        
                 #print(f"the datast for {var}: {datast} 0th_char: {datast[0]}")  
                 else: 
                     self.varDatas.append(datast)
@@ -973,9 +1011,14 @@ print("to see available modules use \"help pprint\"")
 
 
 #<<TODO>> depricated? 
-def printRegisters(regaddrs, reglist):
+def printRegisters(reglist, regaddrs):
+    #print(f"addrs {len(regaddrs)} list {len(reglist)}")
     for i in range (len(regaddrs)):
-        print(f"{regaddrs[i]} {reglist[i]}")
+         print(f"{regaddrs[i]} {reglist[i]}")
+    # for i in range (len(regaddrs)):
+    #     print(f"regaddrs: {regaddrs[i]}")
+    # for i in range (len(reglist)):
+    #         print(f"reglist {reglist[i]}")
 
 #gdb command that will print stack registers including certain things from info frame and stat/maps
 class pstack (gdb.Command):
@@ -1120,19 +1163,16 @@ class psp (gdb.Command):
 psp()
 
 
-#i dont know why there is a difference between what is reported in stat and map
+#<<rethere>>
+
 class ptest (gdb.Command):
-    """user defined gdb command"""
+    """used by dev to test single parts of program"""
     def __init__(self):
                                  #cmd user types in goeshere
         super(ptest,self).__init__("ptest",gdb.COMMAND_USER)
     #this is what happens when they type in the command     
     def invoke(self, arg, from_tty):
-        if len(arg)>0:
-            print(f"arg invoke: {arg}")
-        print("invoking ptest") 
-        print(f"from_tty: {from_tty}")
-        print(f"len arg: {len(arg)}")
+        myProgramStack.getRegs()
 ptest()
 
 
@@ -1472,7 +1512,7 @@ class pprint (gdb.Command):
                 #print("some memerror, ignoring")
                 bigListData.append('')
             
-            boundryList = ["esp", "saved_frame_ebp", "previous_sp"]
+            boundryList = ["esp", "saved_ebp", "previous_sp"]
         for i in range(len(bigListNames)):
             for b in boundryList:
                 if (bigListNames[i] == b ):
@@ -1480,11 +1520,14 @@ class pprint (gdb.Command):
         for i in range(len(bigListNames)):
             if (bigListNames[i] == "argv" ):
                 bigListColors[i] = myProgram.varColor 
+        for i in range(len(bigListNames)):
+            if (bigListNames[i] == "esp" ):
+                bigListData[i] = "$sp"
         
         for i in range(len(bigListNames)):
          #   print(f"bigdata: {i}  {bigListData[i]}")
         #print(len(bigListData))     
-            if (bigListNames[i] == 'saved_frame_ebx'):
+            if (bigListNames[i] == 'saved_ebx'):
                 bigListColors[i] = 'white'       
                 for j in range(len(bigListData)):
                     if(bigListNames[j] == 'ebx'):
@@ -1511,8 +1554,8 @@ class pprint (gdb.Command):
                 except:
                     pass
 
-
-        printPair(bigListNames,bigListAddrs,bigListColors,bigListData)
+        if(from_tty):
+            printPair(bigListNames,bigListAddrs,bigListColors,bigListData)
         sortedNames, sortedAddrs, sortedColors, sortedData = sortTheBigList(bigListNames,bigListAddrs,bigListColors,bigListData)
         #short message about what color things are 
         varout = colored("variables "+myProgram.varColor,myProgram.varColor)
@@ -1520,19 +1563,48 @@ class pprint (gdb.Command):
         regsout = colored("regs " + myProgram.regColor, myProgram.regColor)
         specregsout = colored("special registers " + myProgram.specialRegisterColor, myProgram.specialRegisterColor)
         stackboundry = colored("stack boundry "+myProgramStack.boundryColor, myProgramStack.boundryColor)
+        
         print(varout,funcout,regsout, specregsout, stackboundry)
         #now print the full thing 
-        printPair(sortedNames,sortedAddrs,sortedColors,sortedData)
-        myProgram.trackStacks.append([sortedNames, sortedAddrs, sortedColors, sortedData])
-        # myProgram.everything =  [ [myProgram.programStack.both], 
-        #    [myProgram.programFuncs.funcInfo], [myProgram.programVariables.variableInfo]  ]
-        # count = 0
-        # for e in myProgram.everything:
-        #     print(count,e)
-        #     count +=1
+        if(from_tty):
+            printPair(sortedNames,sortedAddrs,sortedColors,sortedData)
+        
         myProgram.sortedAddrs = sortedAddrs
         myProgram.sortedNames = sortedNames
         myProgram.sortedColors = sortedColors
+       # print(len(sortedAddrs), len(sortedNames), len(sortedColors))
+        #only append if there has been changes
+        #we also dont care about the list being "unhashable" after the first time we call pprint anyway
+        try:
+            if(set(myProgram.trackStacks) == set()):
+                #myProgram.addStackTrack(sortedNames,sortedAddrs,sortedData,sortedColors)
+                
+                myProgram.trackStacks.append([sortedNames,sortedAddrs,sortedColors,sortedData])
+        except:
+            pass
+        localSet = set(sortedAddrs)
+        #print("local set: ",localSet)
+        #print("myprogramstacks ", myProgram.trackStacks)
+        for s in myProgram.trackStacks:
+            #print(s)
+            trackedSet = set(s[1])
+            
+            print("set difference: ", localSet - trackedSet)
+            #change to != later <<TODO>>
+            if(trackedSet - localSet == set()):
+                print("nothing to do here the set is empty")
+                #print(trackedSet)
+            else:
+                print("not empty add to list")
+                
+                myProgram.trackStacks.append([sortedNames,sortedAddrs,sortedColors,sortedData])
+                break
+        # localStackLine = n2
+        # for line in myProgram.trackStackLines:
+        #     if line == localStackLine:
+        #         return      
+        # myProgram.trackStackLines.append(localStackLine) 
+        # myProgram.trackStacks.append([sortedNames,sortedAddrs,sortedData,sortedColors])
         #myProgram.addSorted(sortedAddrs,sortedNames,sortedColors)
         
 pprint() 
@@ -1559,19 +1631,89 @@ class pAllStacks (gdb.Command):
         print(f"len arg: {len(arg)}")
         s = myProgram.trackStacks
         i = 0
-        for stack in s:
-            print(f"~~~~stack number {i}~~~~")
-            i= i +1
-            #printPair(stack[0],stack[1],stack[2])
-          
+        if(from_tty or arg == "-c"):
+            for stack in s:
+                print(f"~~~~stack number {i}~~~~")
+                i= i +1
+                #printPair(names,addrs,colors,data):
+                printPair(stack[0],stack[1],stack[2],stack[3])
+        else:
+            for stack in s:
+                print(f"~~~~stack number {i}~~~~")
+                i= i +1
+                printPairNoColor(stack[0],stack[1],stack[3])
+        #print(f"fromtty: {from_tty} arg: {arg}")        
 pAllStacks()
 
+#modify the printpair cmd to do more than one per columns 
+class writeStacksToFile (gdb.Command):
+    """print all stack information collected so far with pprint
+    supported args (number of stacks to print) <<TODO>>
+    color updates only reflect from the point done forward, does not affect previous stack colors
+    eg if variables are white on stack 1 but changed after pprint is called this change will only 
+    be reflected from stack 2 onwards"""
+    def __init__(self):
+                                 #cmd user types in goeshere
+        super(writeStacksToFile,self).__init__("pwas",gdb.COMMAND_USER)
+    #this is what happens when they type in the command     
+    def invoke(self, arg, from_tty):
+        print("invoking writeStacksToFile")
+        if(len(arg)>0):
+            filename = arg
+        else:
+            filename = "all_stacks.txt"
+        out = gdb.execute('pas',to_string = True)
+        lines = out.splitlines()
+        with open(filename,'w') as f:
+            for line in lines:
+                print(line)
+                f.write(line)
+                f.write("\n")
+          
+writeStacksToFile()
 
+
+#modify the printpair cmd to do more than one per columns 
+#<<rethere>> <<TODO>>
+class pAutomatedTest (gdb.Command):
+    """automatically run each line of the file, collect stack information, and print to file """
+    def __init__(self):
+                                 #cmd user types in goeshere
+        super(pAutomatedTest,self).__init__("pauto",gdb.COMMAND_USER)
+    #this is what happens when they type in the command     
+    def invoke(self, arg, from_tty):
+        print("invoking pAutomatedTest")
+        
+        myProgramFunctions.populateFunctions()
+        funcNumbers = myProgramFunctions.functionsLine
+        for num in funcNumbers:
+            gdb.execute(f'b {num}')
+        i = 0
+        isRunning = isGDBRunningpy()
+        while(isRunning):
+            print("i: ",i)
+            i= i +1
+            try:
+                gdb.execute('pprint')
+                gdb.execute('n')
+            except gdb.error:
+                break
+                
+            #gdb.execute("pwas automated_all_stacks.txt")
+            isRunning = isGDBRunningpy()
+        #print(myProgramFunctions.functionsLine)
+        if(len(arg)>0):
+            if(arg == "-t"):
+                gdb.execute('pas -c')
+        else:        
+            gdb.execute('pwas')
+         
+pAutomatedTest()
 def getColor(text):
     #the things we want to highlight
     
     #keyRegs = ['eip', 'saved_eip', 'saved_esp', 'saved_ebp']
-    keyRegs = ['eip', 'edx', 'edi', 'saved_ebp']
+    keyRegs = ['eip', 'edx', 'edi', 'saved_ebp, ebp']
     #keyVariables (if first thing is a v``)
     #keyFunction (if first thing is a f)
     #the colors we want to use 
@@ -1609,7 +1751,7 @@ def printPair(names,addrs,colors,data):
     
     const = 20
     print("---------------------------")
-    print("reg/var/func/info    address")
+    print("reg/var/func/info    address       what is stored <what is pointing to?>")
     print("---------------------------")
     for i in range(len(names)):
         #print(f"{names[i]}{' '.ljust(10)}{addrs[i]}")
@@ -1624,6 +1766,27 @@ def printPair(names,addrs,colors,data):
                 out = colored(f"{names[i]}{spaceString}{addrs[i]}",colors[i])
         else:
             out = colored(f"{names[i]}{spaceString}{addrs[i]}     {data[i]}",colors[i])
+        print(out)
+
+def printPairNoColor(names,addrs,data):
+    
+    const = 20
+    print("---------------------------")
+    print("reg/var/func/info    address       what is stored")
+    print("---------------------------")
+    for i in range(len(names)):
+        #print(f"{names[i]}{' '.ljust(10)}{addrs[i]}")
+        nameSize = len(names[i])
+        spaceString = " "
+        for j in range(const-(nameSize)):
+            spaceString = spaceString + " "
+        if(data == ""):
+            if (names[i]== 'saved_eip' or names[i]=='previous_sp'):
+                out = names[i]+spaceString+addrs[i]
+            else:
+                out = names[i]+spaceString+addrs[i]
+        else:
+            out = names[i]+spaceString+addrs[i]+"     "+data[i]
         print(out)
 
 #sorts the big list of the stack/heap/registers, basically whatever you give it .
