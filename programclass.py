@@ -30,6 +30,7 @@
 # EFLAGS
 
 
+#https://github.com/pyside/packaging/blob/master/setuptools/templates/pyside_postinstall.py
 
 
 
@@ -536,7 +537,10 @@ class Program:
         out = gdb.execute("info line",to_string = True)
         fileregex = "\".+\""
         m = re.search(fileregex,out)
-        filename = m.group(0).strip("\"" )
+        try:
+            filename = m.group(0).strip("\"" )
+        except:
+            filename = "unknown.c"   
         #print(filename)
         #print(filename[0:-2])
         self.filepath = filename
@@ -1217,135 +1221,6 @@ class changemode (gdb.Command):
 
 changemode()
 
-# class simplepprint (gdb.Command):
-#     """user defined gdb command"""
-#     def __init__(self):
-#                                  #cmd user types in goeshere
-#         super(simplepprint,self).__init__("spp",gdb.COMMAND_USER)
-#     #this is what happens when they type in the command     
-#     def invoke(self, arg, from_tty):
-#                 #need flag for all, gui, ...tui?
-
-#         #need add extranious things like data and stuff
-#         bigListNames = []
-#         bigListAddrs = []
-#         bigListColors = []
-#         bigListData = []
-#         #argString = arg.strip('').split('-')
-#         print("invoking pprint")
-#         gdb.execute('pfunc')
-#         gdb.execute('pvars')
-#         gdb.execute('pmap')
-#         gdb.execute('pstat')
-#         gdb.execute('pstack')
-#         myProgramStack.getFrameInfo()
-#         print("gathered all data ")
-#         #manual stuff 
-#         #map 
-#         #may need to check if empty here 
-#         # if(myProgram.mapHeapBottom==''):
-#         #     pass
-#         # else:
-#         if(myProgram.mapHeapBottom == ""):
-#             pass
-#         else:
-#             bigListNames.append("map_heap_bottom")
-#             bigListAddrs.append(myProgram.mapHeapBottom)
-#             bigListNames.append("map_heap_top")
-#             bigListAddrs.append(myProgram.mapHeapTop)
-#             bigListColors.append("white")
-#             bigListColors.append("white")
-
-#         bigListNames.append("map_stack_bottom")
-#         bigListAddrs.append(myProgram.mapStackBottom)
-#         bigListNames.append("map_stack_top")
-#         bigListAddrs.append(myProgram.mapStackTop)
-#         bigListColors.append("white")
-#         bigListColors.append("white")
-#         print("finished appending mapstack")
-#         #automated stuff 
-#         #stack registers
-#         #stack registers is not apending the color properly when changing
-#         special_registers = ['eip', 'edx', 'edi', 'saved_ebp'] #double check these 
-#         for i in range(len(myProgramStack.stackRegisterNames)):
-#             bigListNames.append(myProgramStack.stackRegisterNames[i])
-#             bigListAddrs.append(myProgramStack.stackRegisterAddresses[i])
-#             found = 0
-#             for specReg in special_registers:
-                
-#                 if(myProgramStack.stackRegisterNames[i] == specReg):
-#                     bigListColors.append(myProgram.specialRegisterColor)
-#                     found = 1
-#             if(not found):    
-#                 bigListColors.append(myProgram.regColor)
-                
-#         print("appended stack registers")    
-
-#         #functions
-#         for i in range(len(myProgramFunctions.functionsName)):
-#             bigListNames.append(myProgramFunctions.functionsName[i])
-#             bigListAddrs.append(myProgramFunctions.functionsAddr[i])
-#             bigListColors.append(myProgram.funcColor)
-#         print("appended functions")        
-#         #variable info
-#         for i in range(len(myProgramVariables.varNames)):
-#             bigListNames.append(myProgramVariables.varNames[i])
-#             bigListAddrs.append(myProgramVariables.varAddrs[i])
-#             bigListColors.append(myProgram.varColor)
-        
-#         print("appended big list names, addrs, colors")
-#         for name in bigListNames:
-#             try:
-#                 #variable type with whatis
-#                 #out = gdb.execute(f"whatis {var}",to_string = True)
-#                 #self.getVariableType()
-#                 #print(f"{var}: {out}")
-#                 out = gdb.execute(f"print {name}",to_string = True)
-#                 o = out.split()
-#                 #o = o.replace("'",'')
-#                 #print(f"{var}: {out} o:{o} len: {len(o)}")
-#                 if(len(o)>3):
-#                     #remove ' and " characters
-#                     d1 = o[3].strip('\"')
-#                     datast =d1.replace("'",'')
-#                     print("this is a character")
-#                 #   print(print(f"{var}: {o[3][0]}"))
-#                 else:
-#                     #remove ' and " characters
-#                     d1 = o[2].strip('\"')
-#                     datast =d1.replace("'",'')
-#             #dont add data that has has not been initialized yet. 
-#                 print(f"datast: {datast}")
-#                 if(datast=='<error:'):
-#                    bigListData.append('null')    
-#                 #print(f"the datast for {var}: {datast} 0th_char: {datast[0]}")  
-#                 else: 
-#                     bigListData.append(datast)
-#             except gdb.MemoryError:
-#                 #print("some memerror, ignoring")
-#                 self.varDatas.append('null')
-#         
-#         print("before printpair")
-#         printPair(bigListNames,bigListAddrs,bigListColors,bigListData)
-#         print("after printpair")
-#         sortedNames, sortedAddrs, sortedColors = sortTheBigList(bigListNames,bigListAddrs,bigListColors)
-#         #short message about what color things are 
-#         varout = colored("variables "+myProgram.varColor,myProgram.varColor)
-#         funcout= colored("functions "+myProgram.funcColor,myProgram.funcColor) 
-#         regsout = colored("regs " + myProgram.regColor, myProgram.regColor)
-#         specregsout = colored("special registers " + myProgram.specialRegisterColor, myProgram.specialRegisterColor)
-#         print(varout,funcout,regsout, specregsout)
-#         #now print the full thing 
-#         printPair(bigListNames,bigListAddrs,bigListColors,bigListData)
-#         #SORTEDDATA GOES HERE
-#         myProgram.trackStacks.append([sortedNames, sortedAddrs, sortedColors])
-#         # myProgram.everything =  [ [myProgram.programStack.both], 
-#         #    [myProgram.programFuncs.funcInfo], [myProgram.programVariables.variableInfo]  ]
-#         # count = 0
-#         # for e in myProgram.everything:
-#         #     print(count,e)
-#         #     count +=1
-# simplepprint()
 
 #<<TODO>> make saved_EIP point to eip register as data 
 class pprint (gdb.Command):

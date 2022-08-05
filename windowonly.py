@@ -48,7 +48,7 @@ from PyQt6.QtCore import QRect, Qt, QRectF,QPointF,QPoint
 #QString and QRegEXP
 import sys
 import math 
-from PySide6.QtGui import QSyntaxHighlighter
+#from PySide6.QtGui import QSyntaxHighlighter
 
 #PySide6.QtGui.QSyntaxHighlighter.setFormat(start, count, color)
          

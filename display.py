@@ -18,28 +18,29 @@
 # # #https://www.pythonguis.com/tutorials/pyqt6-layouts/
 
 
-class resource (gdb.Command):
-    """user defined gdb command"""
-    def __init__(self):
-                                 #cmd user types in goeshere
-        super(resource,self).__init__("rs",gdb.COMMAND_USER)
-    #this is what happens when they type in the command     
-    def invoke(self, arg, from_tty):
-        gdb.execute("source display.py")
-resource() 
+# class resource (gdb.Command):
+#     """user defined gdb command"""
+#     def __init__(self):
+#                                  #cmd user types in goeshere
+#         super(resource,self).__init__("rs",gdb.COMMAND_USER)
+#     #this is what happens when they type in the command     
+#     def invoke(self, arg, from_tty):
+#         gdb.execute("source display.py")
+# resource() 
 
 
-class getpid (gdb.Command):
-    """user defined gdb command"""
-    def __init__(self):
-                                 #cmd user types in goeshere
-        super(getpid,self).__init__("getpid",gdb.COMMAND_USER)
-    #this is what happens when they type in the command     
-    def invoke(self, arg, from_tty):
-        out = gdb.execute('info proc',to_string = True)
-        arr = out.splitlines()
-        print(arr[0])
-getpid() 
+# class getpid (gdb.Command):
+#     """user defined gdb command"""
+#     def __init__(self):
+#                                  #cmd user types in goeshere
+#         super(getpid,self).__init__("getpid",gdb.COMMAND_USER)
+#     #this is what happens when they type in the command     
+#     def invoke(self, arg, from_tty):
+#         out = gdb.execute('info proc',to_string = True)
+#         arr = out.splitlines()
+#         print(arr[0])
+# getpid() 
+
 
 
 
@@ -50,7 +51,8 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import *
 from  PyQt6 import *
 import sys
- 
+import re
+
 class PrintWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -59,9 +61,15 @@ class PrintWindow(QMainWindow):
         # self.top=50
         # self.width=300
         # self.height=300
+        self.button = QPushButton(self)
+        self.button.clicked.connect(self.updateGDB)
+        self.button.move(100,100)
         self.initUI()
-        textStorage = ""
-
+        self.textStorage = ""
+        # self.button = QPushButton("update stuff")
+        # self.button.clicked.connect(self.updateGDB)
+        # self.button.move(100,100)
+ 
     def initUI(self):
 
         #self.setGeometry(self.left,self.top,self.width,self.height)
@@ -74,6 +82,8 @@ class PrintWindow(QMainWindow):
         self.line_edit2.move(50, 100)
         layout.addWidget(self.line_edit1)
         layout.addWidget(self.line_edit2)
+        
+        layout.addWidget(self.button)
         self.show()
     def updateGDB(self):
         text = self.textStorage
@@ -111,31 +121,79 @@ class Window(QWidget):
         layout.addWidget(button)
 
         button = QPushButton("resource")
-        button.clicked.connect(self.res)
+        #button.clicked.connect(self.res)
         layout.addWidget(button)
-       
+        button = QPushButton("update GDB")
+        button.clicked.connect(self.updateGDB)
+        #button.move(100,100)
+        self.textStorage = ""
+        
+        self.line_edit1 = QLineEdit(self)
+        #self.line_edit1.move(50, 50)
+        self.line_edit1.returnPressed.connect(self.on_line_edit1_returnPressed)
 
-  
+        self.line_edit2 = QLabel(self)
+        #self.line_edit2.move(50, 100)
+        layout.addWidget(self.line_edit1)
+        layout.addWidget(self.line_edit2)
+        layout.addWidget(button)
+        button = QPushButton("next")
+        button.clicked.connect(self.gdbNext)
+        layout.addWidget(button)
+    def gdbNext(self):
+        print("invoke gdbNExt")
+        gdb.execute("n")    
+        self.update()
+
+    def updateGDB(self):
+        text = self.textStorage
+        out = gdb.execute(text,to_string =True)
+        self.line_edit2.setText(out)
+
+    def on_line_edit1_returnPressed(self):
+        self.textStorage = self.line_edit1.text()
+        self.line_edit1.setText("")
+        #self.line_edit1.setText(self.line_edit1.text())
+        self.updateGDB()
+        print(self.textStorage)
     def update(self):
-        filename = "lab01/tracer1a.c"
+        #filename = "lab01/tracer1a.c"
+        filename = "simple_program.c"
         with open(filename,'r') as f:
             text = f.readlines()
-        # gdb.execute('b main')
-        # gdb.execute('r')
+        
+        out = gdb.execute("info line", to_string = True)
+        m = re.search(" \d+ ", out)
+        try:
+            num = m.group(0)[1:-1]
+            numInt = int(num)
+        except:
+            pass
         # text = gdb.execute("list",to_string=True)
         t2 = ""
+        i = 0
         for t in text:
-            t2 = t2 + t
+            #print(f"T: {t} i: {i}")
+            if i == numInt-1:
+                t2 = t2 +"--->"+ t 
+                print(f"i is equal here! i: {i} num{numInt}")
+                i=i+1
+            else:    
+               t2 = t2 + t
+               i=i+1
         self.label.setText(f"{t2}")
-     
+        t2 = ""
     def get(self):
         print(self.label.text())
-    def res(self):
-        resource()
+    #def res(self):
+    #    resource()
 
 app = QApplication(sys.argv)
-window = PrintWindow()
-#window.show()
+#window = PrintWindow()
+window = Window()
+gdb.execute('b main')
+gdb.execute('r')
+window.show()
 sys.exit(app.exec())
 
 
