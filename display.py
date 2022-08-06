@@ -98,7 +98,7 @@ class PrintWindow(QMainWindow):
         print(self.textStorage)
     
 
-class Window(QWidget):
+class SomeWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.resize(300, 250)
@@ -190,7 +190,7 @@ class Window(QWidget):
 
 app = QApplication(sys.argv)
 #window = PrintWindow()
-window = Window()
+window = SomeWindow()
 gdb.execute('b main')
 gdb.execute('r')
 window.show()
