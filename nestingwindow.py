@@ -39,7 +39,7 @@
 #https://github.com/pyside/packaging/blob/master/setuptools/templates/pyside_postinstall.py
 
 
-
+###there is some bug with pprinting with the window in the function() so yeah...
 
 import re
 import os
@@ -617,15 +617,25 @@ class Program:
                 self.scroll = QScrollArea()             # Scroll Area which contains the widgets, set as the centralWidget
                 self.widget = QWidget()                 # Widget that contains the collection of Vertical Box
                 self.layout = QGridLayout()               # The Vertical Box that contains the Horizontal Boxes of  labels and buttons
-
-                self.label = QLabel("Old Text")
-                self.label.setAlignment(Qt.AlignmentFlag.AlignLeft)
-                self.label.adjustSize()
                 
-                self.layout.addWidget(self.label,0,0)
+                self.codeLabels = []
+                
+               
+                for i in range(256):
+                    #print("adding line: ",i)
+                    l = QLabel(f"l: {i}")
+                    self.codeLabels.append(l)
+                    
+                    #self.line_edit2[i].setAlignment(Qt.AlignmentFlag.AlignLeft) 
+                    
+                for j in range(256):
+                    self.codeLabels[j].setAlignment(Qt.AlignmentFlag.AlignLeft)
+                    self.codeLabels[j].adjustSize()
+                    
+                    self.layout.addWidget(self.codeLabels[j],j,0)
 
-                updateButton = QPushButton("Update Text")
-                updateButton.clicked.connect(self.update)
+                updateButton = QPushButton("Update Code")
+                updateButton.clicked.connect(self.updateCodeLabels)
 
                 printButton = QPushButton("Print Text")
                 printButton.clicked.connect(self.get)
@@ -635,6 +645,8 @@ class Program:
                 
                 updateGDBButton = QPushButton("update GDB")
                 updateGDBButton.clicked.connect(self.updateGDB)
+                testButton = QPushButton("testButton")
+                testButton.clicked.connect(self.testFunc)
                 
                 self.textStorage = ""
                 
@@ -667,21 +679,63 @@ class Program:
                 self.layout.addWidget(self.line_edit1,4,2)
 #                self.layout.addWidget(self.line_edit2,0,1)
                 self.layout.addWidget(updateGDBButton,5,2)
+                self.layout.addWidget(testButton,6,2)
                 
                 self.widget.setLayout(self.layout)
 
                 #Scroll Area Properties
                 self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
-                self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+                self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
                 self.scroll.setWidgetResizable(True)
                 self.scroll.setWidget(self.widget)
 
                 self.setCentralWidget(self.scroll)
                 #<<TODO>> resize this
                 self.setGeometry(600, 100, 1000, 900)
-                self.setWindowTitle('Scroll Area Demonstration')
-
-
+                self.setWindowTitle('change me later <<TODO>>')
+            #update the GDB lables with what is in stuff, will work differently if colors are involved. 
+            def testFunc(self):
+                print("testing some function")
+                stuff = []
+                stuff.append(["edx","0x0000","data"])
+                stuff.append(["eap","0xffff","no data"])
+                stuff.append(["aaa","0xaaaa","aaaa data"])
+                coloredStuff = [["edx","0x0000","blue","data"],["bbb","0xbbb","red","i am red"],["eap","0xffff","blue","no data"]]
+                #self.updateGDBLabelText(coloredStuff,1)
+                self.updateGDBLabelText(stuff)
+            def updateGDBLabelText(self, stuff, hasColor = 0):
+                print("update GDB Label text")
+                self.clearLine2()
+                colorIndex = 2
+                z = zip(*stuff)
+                zlist = list(zip(*stuff))
+                print(zlist)
+                if hasColor:
+                    for i in range(len(zlist)):
+                        out = ""
+                        for j in range(len(zlist[i])):
+                            color = "black"
+                            if(j == colorIndex ):
+                                color = zlist[i][j]
+                                #print(f"the color is: z{color}z")
+                                if color == "white":
+                                    color = "black"
+                                elif color == 'yellow':
+                                    color = "DarkGoldenRod"
+                                #print(f"changed color is: z{color}z")
+                                gdbWindow.line_edit2[i].setStyleSheet(f"color:{color}")
+                            else:
+                                out = out+ zlist[i][j] + " "
+                        #print(f"i: {i} out: {out}")
+                        gdbWindow.line_edit2[i].setText(out)
+                else:   
+                    for i in range(len(zlist)):
+                        out = ""
+                        for componant in zlist[i]:
+                            out = out+ componant + " "
+                        #print(f"i: {i} out: {out}")
+                        gdbWindow.line_edit2[i].setText(out)
+                        gdbWindow.line_edit2[i].setStyleSheet(f"color:black")
                 #self.update()
             def gdbNext(self):
                 print("invoke gdbNExt")
@@ -706,31 +760,63 @@ class Program:
                 for i in range(len(self.line_edit2)):
                     self.line_edit2[i].setText("")
             def on_line_edit1_returnPressed(self):
-                self.clearLine2()
                 self.textStorage = self.line_edit1.text()
+                if(self.textStorage != 'n'):
+                    self.clearLine2()
+                
                 self.line_edit1.setText("")
                 #self.line_edit1.setText(self.line_edit1.text())
                 text = self.textStorage
-                out = gdb.execute(text,to_string =True)
-                if text != "pprint":
-                    lines = out.splitlines()
-                    print(out)
-                    print(lines)
-                    #i = 255
-                    #self.line_edit2[i].setText(out)
-                    # for i in range(len(self.line_edit2)):
-                    #     self.line_edit2[i].setText(str(i))
-                    i = 0
-                    for line in lines:
-                        self.line_edit2[i].setText(line)
-                        print(f"trying to add: {line} to line {i}")
-                        i=i+1
-                    #self.updateGDB()
-                    print(self.textStorage)
-            def update(self):
+                #out = gdb.execute(text,to_string =True)
+                gdb.execute(text)
+                self.updateCodeLabels()
+                # if text != "pprint":
+                #     lines = out.splitlines()
+                #     print(out)
+                #     print(lines)
+                #     #i = 255
+                #     #self.line_edit2[i].setText(out)
+                #     # for i in range(len(self.line_edit2)):
+                #     #     self.line_edit2[i].setText(str(i))
+                #     i = 0
+                #     for line in lines:
+                #         self.line_edit2[i].setText(line)
+                #         print(f"trying to add: {line} to line {i}")
+                #         i=i+1
+                #     #self.updateGDB()
+                #     print(self.textStorage)
+            def getBreakpoints(self):
+                breakpointRegex = "\d+$"
+                out = gdb.execute('info breakpoints',to_string = True)
+                lines = out.splitlines()
+                print(out)
+                print(lines)
+                bps = []
+                for line in lines:
+                    #print(f"examining {line}")
+                    try:
+                        #re.findall()
+                        m = re.search(breakpointRegex,line)
+                    #    print("M is:",m.group(0))
+                        bps.append(m.group(0))
+                    except:
+                        print('exception in getBreakPoints')
+                        pass
+                    
+                        a = 0
+                #print("all breakpoints ", bps)
+                uniqueBps = [*set(bps)]
+                uniqueBps.sort(key = int)
+                #print("unique bps: ",uniqueBps)
+                return uniqueBps
+             
+
+            def updateCodeLabels(self):
                 #filename = "lab01/tracer1a.c"
                 #filename = "simple_program.c"
                 filename = self.filepath
+                for i in range(len(self.codeLabels)):
+                    self.codeLabels[i].setText("")
                 with open(filename,'r') as f:
                     text = f.readlines()
                 
@@ -744,19 +830,38 @@ class Program:
                 # text = gdb.execute("list",to_string=True)
                 t2 = "~~~~~~~~~~~~~~~"+self.localfilepath+"~~~~~~~~~~~~~~"
                 t2= t2 + "\n"
+                
                 i = 0
+                bps = self.getBreakpoints()
+                for a in bps:
+                    print("for a in bps: ",a)
                 for t in text:
                     lineNumber = str(i+1)+": "
                     #print(f"T: {t} i: {i}")
-                    if i == numInt-1:
+                    if (str(i+1) in bps and i == numInt-1):
+                        print("breakpoint and current position")
+                        t2 = t2 +"B---> "+ t 
+                        i=i+1    
+                    elif(str(i+1) in bps):
+                        t2 = t2 +"B "+lineNumber+ t 
+                        i=i+1    
+                    elif i == numInt-1:
                         t2 = t2 +"--->"+ t 
                         print(f"i is equal here! i: {i} num{numInt}")
-                        i=i+1
+                        i=i+1    
                     else:    
                         t2 = t2 + lineNumber+t
                         i=i+1
-                self.label.setText(f"{t2}")
-                t2 = ""
+                j = 0   
+                lines = t2.splitlines()
+                for line in lines:    
+                    #print(line)
+                    #codeText.append(f"{line}")
+                    self.codeLabels[j].setText(f"{line}")
+                    j=j+1
+                
+                #t2 = ""
+
             def get(self):
                 print(self.label.text())  
             def getProgramFilePathForCodeWindow(self):
@@ -1013,6 +1118,8 @@ class Variables:
         self.varAddrs = []
         self.varDatas = []
         self.variableInfo = [self.varNames,self.varAddrs,self.varDatas]
+    def updateVariableInfo(self):
+        self.variableInfo = [self.varNames,self.varAddrs,self.varDatas]
     #sorting variables by their address 
     def sort(self):
         #print('sorting')
@@ -1130,6 +1237,7 @@ class Variables:
                 o = out.split()
                 #o = o.replace("'",'')
                 #print(f"{var}: {out} o:{o} len: {len(o)}")
+                datast = ""
                 if(len(o)>3):
                     #remove ' and " characters
                     d1 = o[3].strip('\"')
@@ -1222,12 +1330,19 @@ class pvars (gdb.Command):
     #this is what happens when they type in the command     
     def invoke(self, arg, from_tty):
         if(isGDBRunningpy()):
-            if(not myProgram.window.isVisible()):
-                print("invoking pvars")
+            #if(not myProgram.window.isVisible()):
+            print("invoking pvars")
             myProgramVariables.getLocalVariables()
             if(from_tty):
                 if(not myProgram.window.isVisible()):
                     myProgramVariables.printAll()
+            #this may need to be elif later or need to double check from_tty
+            else:
+                    print("updating gdb window pvars")
+                    #print(myProgramVariables.variableInfo)
+                    #myProgramVariables.updateVariableInfo()
+                    print(myProgramVariables.variableInfo)
+                    gdbWindow.updateGDBLabelText([myProgramVariables.varNames,myProgramVariables.varAddrs,myProgramVariables.varDatas])
             #myProgramVariables.sort()
             #myProgramVariables.printAll()
         else:
@@ -1347,12 +1462,19 @@ myProgramHeap = myProgram.programHeap
 myProgramFunctions = myProgram.programFuncs
 myProgramVariables = myProgram.programVariables
 myProgramWindow = myProgram.window
-
-#print welcome message
-print("welcome to PPGDB")
-print("the executable is currently running and a breakpoint has been set in main.")
-print("all program modules begin with the letter p.")
-print("to see available modules use \"help pprint\"")
+gdbWindow = myProgramWindow.gdbWindow
+gdbWindow.getBreakpoints()
+#gdbWindow.updateCodeLabels()
+# print("testing some function")
+# stuff = [["edx","eap","aaa"],["0x0000","0xaaaa","0xffff"],["data", "no data", "blargus"]]
+# coloredStuff = [["edx","eap","aaa"],["0x0000","0xaaaa","0xffff"],["blue", "red", "green"],["data", "no data", "blargus"]]
+# gdbWindow.updateGDBLabelText(coloredStuff,1)
+# gdbWindow.updateGDBLabelText(stuff)
+# #print welcome message
+# print("welcome to PPGDB")
+# print("the executable is currently running and a breakpoint has been set in main.")
+# print("all program modules begin with the letter p.")
+# print("to see available modules use \"help pprint\"")
 
 #myProgramStack.getFrameInfo()
 #printObject(myProgramStack)
@@ -1526,9 +1648,11 @@ class ptest (gdb.Command):
     #this is what happens when they type in the command     
     def invoke(self, arg, from_tty):
         print('ptest')
-        gdb.execute('pprint')
+        bps = gdbWindow.getBreakpoints()
+        print(bps)
+        gdbWindow.updateCodeLabels()
         #printPairNoColor(bigListNames,bigListAddrs,bigListData)
-        printPairNoColor(myProgram.sortedNames,myProgram.sortedAddrs,myProgram.sortedData)
+        #printPairNoColor(myProgram.sortedNames,myProgram.sortedAddrs,myProgram.sortedData)
         # t = myProgram.Window.GDBCodeWindow()
         # t.getProgramFilePathForCodeWindow()
 ptest()
@@ -1796,8 +1920,8 @@ class pprint (gdb.Command):
                 printPair(bigListNames,bigListAddrs,bigListColors,bigListData)
         if(myProgram.window.isVisible()):
             #printPairNoColor(bigListNames,bigListAddrs,bigListData)
-            myProgram.window.gdbWindow.pprintGDBWindow(bigListNames,bigListAddrs,bigListColors,bigListData)
-            
+            #myProgram.window.gdbWindow.pprintGDBWindow(bigListNames,bigListAddrs,bigListColors,bigListData)
+            myProgram.window.gdbWindow.updateGDBLabelText([bigListNames,bigListAddrs,bigListColors,bigListData],1)
             #<<TODO>>
             #the window is visible here, so lets display the contents there
             #<<rethere>>
