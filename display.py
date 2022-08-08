@@ -185,8 +185,7 @@ class SomeWindow(QWidget):
         t2 = ""
     def get(self):
         print(self.label.text())
-    #def res(self):
-    #    resource()
+
 
 app = QApplication(sys.argv)
 #window = PrintWindow()

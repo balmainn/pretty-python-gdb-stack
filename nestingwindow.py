@@ -170,7 +170,8 @@ class Stack:
         for i in range(len(names)):
             print(names[i], "\t",addrs[i])
     def getRegs(self):
-        print('get regs')
+        if(not myProgram.window.isVisible()):
+            print('get regs')
         try:
             self.both.clear()
             self.stackRegisterAddresses.clear()
@@ -178,7 +179,8 @@ class Stack:
         #list is already empty so its ok
         except IndexError:
             pass
-        print("passed exception")
+        if(not myProgram.window.isVisible()):
+            print("passed exception")
         registers = gdb.execute('info registers',to_string = True)
         regsize = 0
         regs = registers.splitlines()
@@ -191,15 +193,18 @@ class Stack:
         #        print(f"{regsize} {line} \n")
                 self.addReg(name,addr)
                 regsize = regsize +1
-        print("before frame info")
+        if(not myProgram.window.isVisible()):
+            print("before frame info")
         frameNames, frameRegs = self.getFrameInfo()
-        print("after frame info")
+        if(not myProgram.window.isVisible()):
+            print("after frame info")
         #$sp is the same thing as esp
         # spstring = gdb.execute('x $sp',to_string = True)
         # print(spstring[:10])
         # self.addReg("$sp",spstring[:10])
         for i in range(len(frameNames)):
             self.addReg(frameNames[i],frameRegs[i])
+        
         #test print
         #print(self.stackRegisterAddresses,self.stackRegisterNames)
         #self.printAll()
@@ -215,7 +220,8 @@ class Stack:
         
         if(1):
             for i in range(len(frameArr)):
-                print(i, frameArr[i])
+                if(not myProgram.window.isVisible()):
+                    print(i, frameArr[i])
         
         #0th line
         # frame level # is used for recursion 
@@ -237,7 +243,8 @@ class Stack:
             pass
         arglist = []
         if m:
-            print(f" arglist m: {m}")
+            if(not myProgram.window.isVisible()):
+                print(f" arglist m: {m}")
             arglist = m[0]
         #print("11-12char: ",frameArr[4][11:12])
         #if the address is unknown, skip it. 
@@ -262,7 +269,8 @@ class Stack:
         #print(m2)
         
         for reg in m:
-            print(f"adding: {reg}")
+            if(not myProgram.window.isVisible()):
+                print(f"adding: {reg}")
             frameRegs.append(reg)
         
         for reg in m2:
@@ -286,9 +294,11 @@ class Stack:
         if previous_sp:
             frameRegs.append(previous_sp)
             frameRegNames.append("previous_sp")
-        print('before printRegisters')
+        if(not myProgram.window.isVisible()):
+            print('before printRegisters')
         printRegisters(frameRegNames,frameRegs)
-        print("after printRegisters")
+        if(not myProgram.window.isVisible()):
+            print("after printRegisters")
         # for i in range(len(frameRegNames)):
         #     print(f"{i} {frameRegNames[i]} {frameRegs[i]}")
         #     self.addReg(frameRegNames[i],frameRegs[i])
@@ -303,7 +313,7 @@ class resource (gdb.Command):
         super(resource,self).__init__("rs",gdb.COMMAND_USER)
     #this is what happens when they type in the command     
     def invoke(self, arg, from_tty):
-        gdb.execute("source splitwindow.py")
+        gdb.execute("source nestingwindow.py")
 resource() 
 
 #basically just runs show commands but as wc which is easy and lazy. 
@@ -384,6 +394,7 @@ class Func:
     #print the information stored in the containes (the line the function is on, its name, and its address)
     def printAll(self):
         #convert this into a variable that is easier to understand
+      
         print("printing functions")
         names = self.funcInfo[0] 
         addrs = self.funcInfo[2]
@@ -447,164 +458,9 @@ changeColor()
 #the program class is the premary mechanism for storing, retrieving, and interacting with the various parts of the running program. 
 import sys
 
-class GDBCodeWindow(QWidget):
-    def __init__(self):
-        super().__init__()
-        self.resize(300, 250)
-        self.setWindowTitle("GDBCodeWindow")
+
+
  
-        layout = QVBoxLayout()
-        self.setLayout(layout)
- 
-        self.label = QLabel("Old Text")
-        self.label.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.label.adjustSize()
-        layout.addWidget(self.label)
- 
-        button = QPushButton("Update Text")
-        button.clicked.connect(self.update)
-        layout.addWidget(button)
- 
-        button = QPushButton("Print Text")
-        button.clicked.connect(self.get)
-        layout.addWidget(button)
-
-        button = QPushButton("resource")
-        #button.clicked.connect(self.res)
-        layout.addWidget(button)
-        button = QPushButton("update GDB")
-        button.clicked.connect(self.updateGDB)
-        #button.move(100,100)
-        self.textStorage = ""
-        
-        self.line_edit1 = QLineEdit(self)
-        #self.line_edit1.move(50, 50)
-        self.line_edit1.returnPressed.connect(self.on_line_edit1_returnPressed)
-
-        self.line_edit2 = QLabel(self)
-        #self.line_edit2.move(50, 100)
-        layout.addWidget(self.line_edit1)
-        layout.addWidget(self.line_edit2)
-        layout.addWidget(button)
-        button = QPushButton("next")
-        button.clicked.connect(self.gdbNext)
-        layout.addWidget(button)
-        self.update()
-    def gdbNext(self):
-        print("invoke gdbNExt")
-        gdb.execute("n")
-        <<rethere>>    
-        self.update()
-
-    def updateGDB(self):
-        text = self.textStorage
-        out = gdb.execute(text,to_string =True)
-        self.line_edit2.setText(out)
-
-    def on_line_edit1_returnPressed(self):
-        self.textStorage = self.line_edit1.text()
-        self.line_edit1.setText("")
-        #self.line_edit1.setText(self.line_edit1.text())
-        self.updateGDB()
-        print(self.textStorage)
-    def update(self):
-        #filename = "lab01/tracer1a.c"
-        #filename = "simple_program.c"
-        filename = myProgram.filepath
-        with open(filename,'r') as f:
-            text = f.readlines()
-        
-        out = gdb.execute("info line", to_string = True)
-        m = re.search(" \d+ ", out)
-        try:
-            num = m.group(0)[1:-1]
-            numInt = int(num)
-        except:
-            pass
-        # text = gdb.execute("list",to_string=True)
-        t2 = ""
-        i = 0
-        for t in text:
-            #print(f"T: {t} i: {i}")
-            if i == numInt-1:
-                t2 = t2 +"--->"+ t 
-                print(f"i is equal here! i: {i} num{numInt}")
-                i=i+1
-            else:    
-               t2 = t2 + t
-               i=i+1
-        self.label.setText(f"{t2}")
-        t2 = ""
-    def get(self):
-        print(self.label.text())
-
-
-
-class Window(QWidget):
-    def __init__(self):
-        super().__init__()
-        self.window2 = GDBCodeWindow()
-        
-        self.button1 = QPushButton("Push for GDBCode Window")
-        self.button1.clicked.connect(
-            lambda checked: self.toggle_window(self.window2)
-        )
-        #file_menu.addAction(button_action)
-
-        layout = QVBoxLayout()
-        self.setLayout(layout)
-        layout.addWidget(self.button1)
-        
-        self.resize(300, 250)
-        ##<<TODO>> rename this 
-        self.setWindowTitle("ppgdb main window")        
-        self.label = QLabel("Old Text")
-        self.label.setStyleSheet(f'color:{testvar}')
-        layout.addWidget(self.label)   
-        self.line_edit1 = QLineEdit(self)
-        self.line_edit1.returnPressed.connect(self.on_line_edit1_returnPressed) 
-        self.line_edit2 = QLabel(self)
-        self.line_edit2.move(50,50)
-        class gdbHideWindow (gdb.Command):
-            """hide the window"""
-            def __init__(self):
-                                        #cmd user types in goeshere
-                super(gdbHideWindow,self).__init__("phw",gdb.COMMAND_USER)
-            #this is what happens when they type in the command     
-            def invoke(self, arg, from_tty):
-                window.hide()
-                #sys.exit(myProgram.app.exec())
-        gdbHideWindow() 
-        class gdbShowWindow (gdb.Command):
-            """show the window"""
-            def __init__(self):
-                                        #cmd user types in goeshere
-                super(gdbShowWindow,self).__init__("psw",gdb.COMMAND_USER)
-            #this is what happens when they type in the command     
-            def invoke(self, arg, from_tty):
-                window.show()
-        gdbShowWindow() 
-    def updateGDB(self):
-        text = self.textStorage
-        out = gdb.execute(text,to_string =True)
-        self.line_edit2.setText(out)
-        print(out)
-
-    def on_line_edit1_returnPressed(self):
-        self.textStorage = self.line_edit1.text()
-        self.line_edit1.setText("")
-        #self.line_edit1.setText(self.line_edit1.text())
-        self.updateGDB()
-        print(self.textStorage)
-        
-    def toggle_window(self, window):
-        if window.isVisible():
-            window.hide()
-        else:
-            window.show()
-        self.updateButtonText("Show/hide Window 2")
-    def updateButtonText(self,windowState):
-        self.button1.setText(windowState)      
 
  
 testvar = "red"
@@ -617,7 +473,7 @@ class Program:
         self.programFuncs = Func()
         self.programVariables = Variables()
         self.app = QApplication(sys.argv)
-        self.window = Window()
+        
         #mode the program runs in (should initialze to something)
         #simple / default are the same thing
         #self.mode = ""
@@ -675,6 +531,304 @@ class Program:
         self.sortedAddrs = [] 
         self.sortedNames = []
         self.sortedColors = []
+        self.sortedData = []
+        #<<rethere>> problem
+        self.window = self.Window()
+        self.test = "something"
+    class Window(QWidget):
+        def __init__(self):
+            
+            super().__init__()
+            self.gdbWindow = self.GDBCodeWindow()
+            
+            self.button1 = QPushButton("Push for GDBCode Window")
+            self.button1.clicked.connect(
+                lambda checked: self.toggle_window(self.gdbWindow)
+            )
+            #file_menu.addAction(button_action)
+
+            layout = QVBoxLayout()
+            self.setLayout(layout)
+            layout.addWidget(self.button1)
+            
+            self.resize(300, 250)
+            ##<<TODO>> rename this 
+            self.setWindowTitle("ppgdb main window")        
+            self.label = QLabel("Old Text")
+            self.label.setStyleSheet(f'color:{testvar}')
+            layout.addWidget(self.label)   
+            self.line_edit1 = QLineEdit(self)
+            self.line_edit1.returnPressed.connect(self.on_line_edit1_returnPressed) 
+
+            #self.line_edit2 = [QLabel(self)] * 100
+            self.line_edit2 = QLabel(self)
+            #self.line_edit2.move(50,50)
+            class gdbHideWindow (gdb.Command):
+                """hide the window"""
+                def __init__(self):
+                                            #cmd user types in goeshere
+                    super(gdbHideWindow,self).__init__("phw",gdb.COMMAND_USER)
+                #this is what happens when they type in the command     
+                def invoke(self, arg, from_tty):
+                    window.hide()
+                    #sys.exit(myProgram.app.exec())
+            gdbHideWindow() 
+            class gdbShowWindow (gdb.Command):
+                """show the window"""
+                def __init__(self):
+                                            #cmd user types in goeshere
+                    super(gdbShowWindow,self).__init__("psw",gdb.COMMAND_USER)
+                #this is what happens when they type in the command     
+                def invoke(self, arg, from_tty):
+                    window.show()
+            gdbShowWindow() 
+        def clearLine2(self):
+            print("clearline2")
+        def updateGDB(self):
+            text = self.textStorage
+            out = gdb.execute(text,to_string =True)
+            self.line_edit2.setText(out)
+            print(out)
+
+        def on_line_edit1_returnPressed(self):
+            self.textStorage = self.line_edit1.text()
+            self.line_edit1.setText("")
+            #self.line_edit1.setText(self.line_edit1.text())
+            self.updateGDB()
+            print(self.textStorage)
+            
+        def toggle_window(self, window):
+            if window.isVisible():
+                window.hide()
+            else:
+                window.show()
+            self.updateButtonText("Show/hide Window 2")
+        def updateButtonText(self,windowState):
+            self.button1.setText(windowState)    
+
+            
+        class GDBCodeWindow(QMainWindow):
+                    
+            def __init__(self):
+                #<<TODO>> justification issues here <work on this next <<rethere>> >
+                super().__init__()
+                #get the filepath for the code window
+                self.getProgramFilePathForCodeWindow()
+                self.scroll = QScrollArea()             # Scroll Area which contains the widgets, set as the centralWidget
+                self.widget = QWidget()                 # Widget that contains the collection of Vertical Box
+                self.layout = QGridLayout()               # The Vertical Box that contains the Horizontal Boxes of  labels and buttons
+
+                self.label = QLabel("Old Text")
+                self.label.setAlignment(Qt.AlignmentFlag.AlignLeft)
+                self.label.adjustSize()
+                
+                self.layout.addWidget(self.label,0,0)
+
+                updateButton = QPushButton("Update Text")
+                updateButton.clicked.connect(self.update)
+
+                printButton = QPushButton("Print Text")
+                printButton.clicked.connect(self.get)
+
+                resourceButton = QPushButton("resource")
+                #resourceButton.clicked.connect(self.res)
+                
+                updateGDBButton = QPushButton("update GDB")
+                updateGDBButton.clicked.connect(self.updateGDB)
+                
+                self.textStorage = ""
+                
+                self.line_edit1 = QLineEdit(self)
+                #self.line_edit1.move(50, 50)
+                self.line_edit1.returnPressed.connect(self.on_line_edit1_returnPressed)
+
+                #self.line_edit2 = QLabel(self)
+                self.line_edit2 = []
+                print("adding line edit 2")
+                for i in range(256):
+                    print("adding line: ",i)
+                    label = QLabel(f"label: {i}")
+                    self.line_edit2.append(label)
+                    #self.line_edit2[i].setAlignment(Qt.AlignmentFlag.AlignLeft)                
+                i = 0    
+                for label in self.line_edit2:    
+                    
+                    self.layout.addWidget(label,i,1)
+                    i = i +1
+                print("finished adding line edit 2")   
+                #self.line_edit2.move(50, 100)
+
+                nextButton = QPushButton("next")
+                nextButton.clicked.connect(self.gdbNext)
+                self.layout.addWidget(updateButton,0,2)
+                self.layout.addWidget(printButton,1,2)
+                self.layout.addWidget(resourceButton,2,2)
+                self.layout.addWidget(nextButton,3,2)
+                self.layout.addWidget(self.line_edit1,4,2)
+#                self.layout.addWidget(self.line_edit2,0,1)
+                self.layout.addWidget(updateGDBButton,5,2)
+                
+                self.widget.setLayout(self.layout)
+
+                #Scroll Area Properties
+                self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
+                self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+                self.scroll.setWidgetResizable(True)
+                self.scroll.setWidget(self.widget)
+
+                self.setCentralWidget(self.scroll)
+                #<<TODO>> resize this
+                self.setGeometry(600, 100, 1000, 900)
+                self.setWindowTitle('Scroll Area Demonstration')
+
+
+                #self.update()
+            def gdbNext(self):
+                print("invoke gdbNExt")
+                gdb.execute("n")
+                self.update()
+                #<<rethere>>    
+                #self.update()
+
+            def updateGDB(self):
+                text = self.textStorage
+                out = gdb.execute(text,to_string =True)
+                lines = out.splitlines()
+                print(out)
+                print(lines)
+                i = 0
+                for line in lines:
+                    self.line_edit2[i].setText(line)
+                    print(line)
+                    i=i=1
+                
+            def clearLine2(self):
+                for i in range(len(self.line_edit2)):
+                    self.line_edit2[i].setText("")
+            def on_line_edit1_returnPressed(self):
+                self.clearLine2()
+                self.textStorage = self.line_edit1.text()
+                self.line_edit1.setText("")
+                #self.line_edit1.setText(self.line_edit1.text())
+                text = self.textStorage
+                out = gdb.execute(text,to_string =True)
+                if text != "pprint":
+                    lines = out.splitlines()
+                    print(out)
+                    print(lines)
+                    #i = 255
+                    #self.line_edit2[i].setText(out)
+                    # for i in range(len(self.line_edit2)):
+                    #     self.line_edit2[i].setText(str(i))
+                    i = 0
+                    for line in lines:
+                        self.line_edit2[i].setText(line)
+                        print(f"trying to add: {line} to line {i}")
+                        i=i+1
+                    #self.updateGDB()
+                    print(self.textStorage)
+            def update(self):
+                #filename = "lab01/tracer1a.c"
+                #filename = "simple_program.c"
+                filename = self.filepath
+                with open(filename,'r') as f:
+                    text = f.readlines()
+                
+                out = gdb.execute("info line", to_string = True)
+                m = re.search(" \d+ ", out)
+                try:
+                    num = m.group(0)[1:-1]
+                    numInt = int(num)
+                except:
+                    pass
+                # text = gdb.execute("list",to_string=True)
+                t2 = "~~~~~~~~~~~~~~~"+self.localfilepath+"~~~~~~~~~~~~~~"
+                t2= t2 + "\n"
+                i = 0
+                for t in text:
+                    lineNumber = str(i+1)+": "
+                    #print(f"T: {t} i: {i}")
+                    if i == numInt-1:
+                        t2 = t2 +"--->"+ t 
+                        print(f"i is equal here! i: {i} num{numInt}")
+                        i=i+1
+                    else:    
+                        t2 = t2 + lineNumber+t
+                        i=i+1
+                self.label.setText(f"{t2}")
+                t2 = ""
+            def get(self):
+                print(self.label.text())  
+            def getProgramFilePathForCodeWindow(self):
+                line = gdb.execute('info file', to_string = True)
+                
+                fpre = "`\/home\/.+'"
+                try:
+                    m = re.search(fpre,line)
+                    self.filepath = m.group(0)[1:-1]
+                    self.executable = self.filepath
+                    self.filepath = self.filepath+".c"
+                except:
+                    self.filepath = "unknown.c"
+                    self.executable = "unknown"
+                    pass
+                    
+                localfilepath = self.executable
+                try:
+                    m = re.search("\w+$",localfilepath)
+                    localfilepath = m.group(0)
+                    
+                except:
+                    localfilepath = "unknown.c"
+                    pass
+                if(self.filepath == "unknown.c" or localfilepath == "unknown.c"):
+                    print("cannot parse this file, is it named correctly?")  
+                    return  
+                self.localexecutable = localfilepath
+                self.localfilepath = localfilepath+".c"
+                print(self.filepath) 
+            def pprintGDBWindow(self,sortedNames, sortedAddrs, sortedColors,sortedData):
+                #create a new QLabel for each line then call something that just displays them. 
+                #print("called pprintGDBWindow with: ", sortedNames, sortedAddrs,sortedColors,sortedData)
+                #print("called pprintGDBWindow")
+                const = 20
+                # self.line_edit2[0].setText("---------------------------")
+                # self.line_edit2[1].setText("reg/var/func/info    address       what is stored")
+                # self.line_edit2[2].setText("---------------------------")
+                names = sortedNames
+                addrs = sortedAddrs
+                data = sortedData
+                #change the color to something better because of the background color
+                for i in range(len(sortedAddrs)):
+                    #print(f"color at {i} : {sortedColors[i]}")
+                    # if i == len(sortedAddrs):
+                    #     break
+                    color = sortedColors[i]
+                    if(sortedColors[i] == "white"):
+                        color = "black"
+                    elif(sortedColors[i] == "yellow"):
+                        color = "cyan"
+                    sortedColors[i] = color
+                    
+                    
+                    #print(f"color is now {i} : {sortedColors[i]}")
+                for i in range(len(names)):
+                    self.line_edit2[i].setStyleSheet(f"color:{sortedColors[i]}")
+                    print()
+                    #print(f"{names[i]}{' '.ljust(10)}{addrs[i]}")
+                    nameSize = len(names[i])
+                    spaceString = " "
+                    for j in range(const-(nameSize)):
+                        spaceString = spaceString + " "
+                    if(data == ""):
+                        if (names[i]== 'saved_eip' or names[i]=='previous_sp'):
+                            out = names[i]+spaceString+addrs[i]
+                        else:
+                            out = names[i]+spaceString+addrs[i]
+                    else:
+                        out = names[i]+spaceString+addrs[i]+"     "+data[i]
+                    self.line_edit2[i].setText(out)
+                        #print(out)
     def addSorted(self, ssortedAddrs, ssortedNames, sortedColors):
         print(f"insorted: {ssortedAddrs}")
         for a in ssortedAddrs:
@@ -682,7 +836,7 @@ class Program:
             self.sortedAddrs.append(a)
         for n in ssortedNames:
             self.sortedNames.append(n)
-        self.sortedColors = sortedcolors
+        self.sortedColors = sortedColors
   
     #change the output color.
     def changeColor(self, color, t):
@@ -710,17 +864,36 @@ class Program:
         print(out)
     #get the program filepath
     def getProgramFilePath(self):
-        out = gdb.execute("info line",to_string = True)
-        fileregex = "\".+\""
-        m = re.search(fileregex,out)
+        line = gdb.execute('info file', to_string = True)
+        fpre = "`\/home\/.+'"
         try:
-            filename = m.group(0).strip("\"" )
+            m = re.search(fpre,line)
+            self.filepath = m.group(0)[1:-1]
+            self.executable = self.filepath
+            self.filepath = self.filepath+".c"
         except:
-            filename = "unknown.c"   
-        #print(filename)
-        #print(filename[0:-2])
-        self.filepath = filename
-        self.executable = filename[0:-2]
+            self.filepath = "unknown.c"
+            self.executable = "unknown"
+            pass
+            
+        localfilepath = self.executable
+        try:
+            m = re.search("\w+$",localfilepath)
+            localfilepath = m.group(0)
+            
+        except:
+            localfilepath = "unknown.c"
+            pass
+        if(self.filepath == "unknown.c" or localfilepath == "unknown.c"):
+            print("cannot parse this file, is it named correctly?")  
+            return  
+        self.localexecutable = localfilepath
+        self.localfilepath = localfilepath+".c"
+        print(self.filepath) 
+        
+
+
+
     #get the running program's process ID
     #this starts debugging leaving it on the first line of main. 
     def getPID(self):
@@ -818,7 +991,8 @@ class Program:
                 #these contain no errors we're looking for    
                 except:
                     pass
-        print(f"heap: {heapStart} to {heapEnd}\nstack: {stackStart} to {stackEnd}")
+        if(not myProgram.window.isVisible()):
+            print(f"heap: {heapStart} to {heapEnd}\nstack: {stackStart} to {stackEnd}")
         #return heapStart, heapEnd, stackStart, stackEnd
         self.mapStackBottom = stackEnd
         self.mapStackTop = stackStart
@@ -828,6 +1002,9 @@ class Program:
         print(f'heap: {self.mapHeapTop} - {self.mapHeapBottom}')
         print(f'stack: {self.mapStackTop} - {self.mapStackBottom}')
         print(f'fromstat: stackbottom: {self.bottomOfStack}')
+
+    
+
 #variables of a program
 class Variables:
     def __init__(self):  
@@ -962,7 +1139,8 @@ class Variables:
                 else:
                     #remove ' and " characters
                     d1 = o[2].strip('\"')
-                    datast =d1.replace("'",'')
+                    if(not myProgram.window.gdbWindow.isVisible()):
+                        datast =d1.replace("'",'')
                #dont add data that has has not been initialized yet. 
                 print(f"datast: {datast}")
                 if(datast=='<error:'):
@@ -1044,10 +1222,12 @@ class pvars (gdb.Command):
     #this is what happens when they type in the command     
     def invoke(self, arg, from_tty):
         if(isGDBRunningpy()):
-            print("invoking pvars")
+            if(not myProgram.window.isVisible()):
+                print("invoking pvars")
             myProgramVariables.getLocalVariables()
             if(from_tty):
-                myProgramVariables.printAll()
+                if(not myProgram.window.isVisible()):
+                    myProgramVariables.printAll()
             #myProgramVariables.sort()
             #myProgramVariables.printAll()
         else:
@@ -1076,7 +1256,8 @@ class pstat (gdb.Command):
         super(pstat,self).__init__("pstat",gdb.COMMAND_USER)
     #this is what happens when they type in the command     
     def invoke(self, arg, from_tty):
-        print("invoking pstat")
+        if(not myProgram.window.isVisible()):
+            print("invoking pstat")
         myProgram.getThingsFromStat()
         if(from_tty):
             myProgram.printStatInfo()
@@ -1090,7 +1271,8 @@ class pmaps (gdb.Command):
         super(pmaps,self).__init__("pmaps",gdb.COMMAND_USER)
     #this is what happens when they type in the command     
     def invoke(self, arg, from_tty):
-        print("invoking pmaps")
+        if(not myProgram.window.isVisible()):
+            print("invoking pmaps")
         myProgram.getStackHeapRangeFromMaps()
         if(from_tty):
             myProgram.printStackHeapRange()
@@ -1129,7 +1311,8 @@ class isGDBRunning (gdb.Command):
             print("i am not running")
             return 0
         else:
-            print(f"i am running, my pid is: {pid}")
+            if(not myProgram.window.isVisible()):
+                print(f"i am running, my pid is: {pid}")
             return 1
 isGDBRunning()
 class pinfoframe (gdb.Command):
@@ -1150,7 +1333,8 @@ def isGDBRunningpy():
             print("i am not running")
             return 0
         else:
-            print(f"i am running, my pid is: {pid}")
+            if(not myProgram.window.isVisible()):
+                print(f"i am running, my pid is: {pid}")
             return pid
 
 
@@ -1162,6 +1346,7 @@ myProgramStack = myProgram.programStack
 myProgramHeap = myProgram.programHeap
 myProgramFunctions = myProgram.programFuncs
 myProgramVariables = myProgram.programVariables
+myProgramWindow = myProgram.window
 
 #print welcome message
 print("welcome to PPGDB")
@@ -1171,24 +1356,6 @@ print("to see available modules use \"help pprint\"")
 
 #myProgramStack.getFrameInfo()
 #printObject(myProgramStack)
-
-#RET TESTING
-# theap = Heap()
-# theap.addReg('reg1','0xfffffff1')
-# theap.addReg('reg4','0xfffffff4')
-# theap.addReg('reg2','0xfffffff2')
-# theap.printAll()
-# tstack = Stack()
-# tstack.addReg('reg1','0xfffffff1')
-# tstack.addReg('reg4','0xfffffff4')
-# tstack.addReg('reg2','0xfffffff2')
-# tstack.printAll()
-# tstack.printPretty()
-# b = tstack.both
-# print(f"both: {b[0][0]} {b[1][0]}")
-# print(f"both: {b[0][1]} {b[1][1]}")
-# print(f"both: {b[0][2]} {b[1][2]}")
-
 
 #<<TODO>> depricated? 
 def printRegisters(reglist, regaddrs):
@@ -1210,13 +1377,15 @@ class pstack (gdb.Command):
     def invoke(self, arg, from_tty):
         if(isGDBRunningpy()):
             argString = arg.strip('').split('-')
-            print("invoking pstack")
-            print(f"len arg: {len(arg)} it is: {arg} type: {type(arg)} argstring: {argString}")
+            if(not myProgram.window.isVisible()):
+                print("invoking pstack")
+                print(f"len arg: {len(arg)} it is: {arg} type: {type(arg)} argstring: {argString}")
             myProgramStack.getRegs()
             if(from_tty):
-                myProgramStack.printAll()
-            if window.isVisible():   
-                myProgramStack.printAll()
+                if(not myProgram.window.isVisible()):
+                    myProgramStack.printAll()
+            # if window.isVisible():   
+            #     myProgramStack.printAll()
         else:
             print("not debugging, please run before using.")
         
@@ -1232,10 +1401,12 @@ class pfunc (gdb.Command):
     def invoke(self, arg, from_tty):
         argString = arg.strip('').split('-')
         #print(arg)
-        print(f"invoking pfunc {arg}")    
+        if(not myProgram.window.isVisible()):
+            print(f"invoking pfunc {arg}")    
         myProgramFunctions.populateFunctions()
         if(from_tty):
-            myProgramFunctions.printAll()
+            if(not myProgram.window.isVisible()):
+                myProgramFunctions.printAll()
 
 pfunc()
 
@@ -1354,7 +1525,12 @@ class ptest (gdb.Command):
         super(ptest,self).__init__("ptest",gdb.COMMAND_USER)
     #this is what happens when they type in the command     
     def invoke(self, arg, from_tty):
-        myProgramStack.getRegs()
+        print('ptest')
+        gdb.execute('pprint')
+        #printPairNoColor(bigListNames,bigListAddrs,bigListData)
+        printPairNoColor(myProgram.sortedNames,myProgram.sortedAddrs,myProgram.sortedData)
+        # t = myProgram.Window.GDBCodeWindow()
+        # t.getProgramFilePathForCodeWindow()
 ptest()
 
 
@@ -1401,6 +1577,7 @@ changemode()
 
 
 #<<TODO>> make saved_EIP point to eip register as data 
+#<<rethere pprint>>
 class pprint (gdb.Command):
     """run all p commands and hope for the best
     <copy paste information for all functions here>  gdb.execute('pfunc')
@@ -1461,14 +1638,16 @@ class pprint (gdb.Command):
         bigListColors = []
         bigListData = []
         #argString = arg.strip('').split('-')
-        print("invoking pprint")
+        if(not myProgram.window.isVisible()):
+            print("invoking pprint")
         gdb.execute('pfunc')
         gdb.execute('pvars')
         gdb.execute('pmap')
         gdb.execute('pstat')
         gdb.execute('pstack')
         myProgramStack.getFrameInfo()
-        print("gathered all data ")
+        if(not myProgram.window.isVisible()):
+            print("gathered all data ")
         #manual stuff 
         #map 
         #may need to check if empty here 
@@ -1491,7 +1670,8 @@ class pprint (gdb.Command):
         bigListAddrs.append(myProgram.mapStackTop)
         bigListColors.append(myProgramStack.boundryColor)
         bigListColors.append(myProgramStack.boundryColor)
-        print("finished appending mapstack")
+        if(not myProgram.window.isVisible()):
+            print("finished appending mapstack")
         #automated stuff 
         #stack registers
         #stack registers is not apending the color properly when changing
@@ -1507,15 +1687,16 @@ class pprint (gdb.Command):
                     found = 1
             if(not found):    
                 bigListColors.append(myProgram.regColor)
-                
-        print("appended stack registers")    
+        if(not myProgram.window.isVisible()):        
+            print("appended stack registers")    
 
         #functions
         for i in range(len(myProgramFunctions.functionsName)):
             bigListNames.append(myProgramFunctions.functionsName[i])
             bigListAddrs.append(myProgramFunctions.functionsAddr[i])
             bigListColors.append(myProgram.funcColor)
-        print("appended functions")        
+        if(not myProgram.window.isVisible()):
+            print("appended functions")        
         #variable info
         for i in range(len(myProgramVariables.varNames)):
             bigListNames.append(myProgramVariables.varNames[i])
@@ -1550,7 +1731,8 @@ class pprint (gdb.Command):
                     datast =d1.replace("'",'')
             #dont add data that has has not been initialized yet. 
                 #print(f"datast: {datast}")
-                print("datast: ", datast)
+                if(not myProgram.window.isVisible()):
+                    print("datast: ", datast)
                 if(datast=='<error:'):
                    bigListData.append('null') 
                 elif(datast=='()}' or datast=='(int)}' or datast=='(int,'):
@@ -1586,7 +1768,8 @@ class pprint (gdb.Command):
                     if(bigListNames[j] == 'ebx'):
                         bigListData[i] = 'ebx_'+bigListAddrs[j]
                         bigListData[j] = 'saved_ebx_'+bigListAddrs[i]
-                        print("eip has been found")
+                        if(not myProgram.window.isVisible()):
+                            print("eip has been found")
                         break
 
             if (bigListNames[i] == 'saved_eip'):
@@ -1595,7 +1778,8 @@ class pprint (gdb.Command):
                 for j in range(len(bigListData)):
                     if(bigListNames[j] == 'eip'):
                         bigListData[i] = 'eip_'+bigListAddrs[j]
-                        print("eip has been found")
+                        if(not myProgram.window.isVisible()):
+                            print("eip has been found")
                         break
             if( bigListNames[i] == 'previous_sp'  ):
                 bigListColors[i] = 'magenta'   
@@ -1608,12 +1792,16 @@ class pprint (gdb.Command):
                     pass
 
         if(from_tty):
-            printPair(bigListNames,bigListAddrs,bigListColors,bigListData)
+            if(not myProgram.window.isVisible()):
+                printPair(bigListNames,bigListAddrs,bigListColors,bigListData)
         if(myProgram.window.isVisible()):
+            #printPairNoColor(bigListNames,bigListAddrs,bigListData)
+            myProgram.window.gdbWindow.pprintGDBWindow(bigListNames,bigListAddrs,bigListColors,bigListData)
+            
             #<<TODO>>
             #the window is visible here, so lets display the contents there
             #<<rethere>>
-            printPair(bigListNames,bigListAddrs,bigListColors,bigListData)    
+            #printPair(bigListNames,bigListAddrs,bigListColors,bigListData)    
         sortedNames, sortedAddrs, sortedColors, sortedData = sortTheBigList(bigListNames,bigListAddrs,bigListColors,bigListData)
         #short message about what color things are 
         varout = colored("variables "+myProgram.varColor,myProgram.varColor)
@@ -1621,15 +1809,17 @@ class pprint (gdb.Command):
         regsout = colored("regs " + myProgram.regColor, myProgram.regColor)
         specregsout = colored("special registers " + myProgram.specialRegisterColor, myProgram.specialRegisterColor)
         stackboundry = colored("stack boundry "+myProgramStack.boundryColor, myProgramStack.boundryColor)
-        
-        print(varout,funcout,regsout, specregsout, stackboundry)
+        if(not myProgram.window.isVisible()):
+            print(varout,funcout,regsout, specregsout, stackboundry)
         #now print the full thing 
         if(from_tty):
-            printPair(sortedNames,sortedAddrs,sortedColors,sortedData)
+            if(not myProgram.window.isVisible()):
+                printPair(sortedNames,sortedAddrs,sortedColors,sortedData)
         
         myProgram.sortedAddrs = sortedAddrs
         myProgram.sortedNames = sortedNames
         myProgram.sortedColors = sortedColors
+        myProgram.sortedData = sortedData
        # print(len(sortedAddrs), len(sortedNames), len(sortedColors))
         #only append if there has been changes
         #we also dont care about the list being "unhashable" after the first time we call pprint anyway
@@ -1650,10 +1840,12 @@ class pprint (gdb.Command):
             print("set difference: ", localSet - trackedSet)
             #change to != later <<TODO>>
             if(trackedSet - localSet == set()):
-                print("nothing to do here the set is empty")
+                if(not myProgram.window.isVisible()):
+                    print("nothing to do here the set is empty")
                 #print(trackedSet)
             else:
-                print("not empty add to list")
+                if(not myProgram.window.isVisible()):
+                    print("not empty add to list")
                 
                 myProgram.trackStacks.append([sortedNames,sortedAddrs,sortedColors,sortedData])
                 break
@@ -1951,10 +2143,13 @@ class gdbinitwindow (gdb.Command):
     #this is what happens when they type in the command     
     def invoke(self, arg, from_tty):
         print("invoke gdbinitwindow")
-        app = myProgram.app
-        #window = PrintWindow()
-        global window
-        window = myProgram.window
-        window.show()
-        sys.exit(app.exec())
+        try:
+            app = myProgram.app
+            #window = PrintWindow()
+            global window
+            window = myProgram.window
+            window.show()
+            sys.exit(app.exec())
+        except:
+            pass    
 gdbinitwindow()  
