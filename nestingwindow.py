@@ -78,11 +78,11 @@ class Heap:
         self.heapBoth.clear()
         self.heapBoth = [reglist, regaddrs]
     def printAll(self):
-        print("printing stack")
+        print("printing heap")
         for s in self.heapBoth:
             print(s)
         self.sortRegs()
-        print("sorted stack")
+        print("sorted heap")
         for s in self.heapBoth:
             print(s)
 
@@ -133,6 +133,61 @@ class Stack:
         self.both.clear()
         self.both = [self.stackRegisterNames,self.stackRegisterAddresses]
 
+    def getRegisterPairs(self):
+        if (self.stackRegisterAddresses == []):
+            print("stack registers empty, getting registers")
+            self.getRegs()
+        boundryList = ["esp", "saved_ebp", "previous_sp"]
+        bigListNames = self.stackRegisterNames
+        bigListAddrs = self.stackRegisterAddresses
+        bigListData = [] 
+        for i in range(len(bigListData)):
+            bigListData.append("")
+        #colors
+        # for i in range(len(bigListNames)):
+        #     for b in boundryList:
+        #         if (bigListNames[i] == b ):
+        #             bigListColors[i] = myProgramStack.boundryColor 
+        # for i in range(len(bigListNames)):
+        #     if (bigListNames[i] == "argv" ):
+        #         bigListColors[i] = myProgram.varColor 
+        # for i in range(len(bigListNames)):
+        #     if (bigListNames[i] == "esp" ):
+        #         bigListData[i] = "$sp"
+        
+        for i in range(len(bigListNames)):
+            print(f"looking at: {bigListNames[i]} in getPair") 
+         #   print(f"bigdata: {i}  {bigListData[i]}")
+        #print(len(bigListData))     
+            if (bigListNames[i] == 'saved_ebx'):
+                    
+                for j in range(len(bigListData)):
+                    if(bigListNames[j] == 'ebx'):
+                        bigListData[i] = 'ebx_'+bigListAddrs[j]
+                        bigListData[j] = 'saved_ebx_'+bigListAddrs[i]
+                        if(not myProgram.window.isVisible()):
+                            print("eip has been found")
+                        break
+
+            if (bigListNames[i] == 'saved_eip'):
+                #bigListColors[i] = 'magenta' 
+                  
+                for j in range(len(bigListData)):
+                    if(bigListNames[j] == 'eip'):
+                        bigListData[i] = 'eip_'+bigListAddrs[j]
+                        if(not myProgram.window.isVisible()):
+                            print("eip has been found")
+                        break
+            if( bigListNames[i] == 'previous_sp'  ):
+                #bigListColors[i] = 'magenta'   
+                out = gdb.execute('p $sp',to_string = True)
+                try:
+                    m = re.search('0x\w+',out)
+                    spAddr = m.group(0)
+                    bigListData[i] = "$sp_"+spAddr
+                except:
+                    pass
+        return bigListData
     #simple sorting function that sorts the registers by their address.    
     def sortRegs(self):
         
@@ -1506,6 +1561,12 @@ class pstack (gdb.Command):
             if(from_tty):
                 if(not myProgram.window.isVisible()):
                     myProgramStack.printAll()
+            else:
+                print("updating gdb window pstack")
+                pair = myProgramStack.getRegisterPairs()
+                print("before update: ", myProgramStack.stackRegisterNames,myProgramStack.stackRegisterNames,pair)
+                #print(myProgramVariables.variableInfo)
+                gdbWindow.updateGDBLabelText([myProgramStack.stackRegisterNames,myProgramStack.stackRegisterNames,pair])    
             # if window.isVisible():   
             #     myProgramStack.printAll()
         else:
