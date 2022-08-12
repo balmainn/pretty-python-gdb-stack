@@ -134,15 +134,17 @@ class Stack:
         self.both = [self.stackRegisterNames,self.stackRegisterAddresses]
 
     def getRegisterPairs(self):
-        if (self.stackRegisterAddresses == []):
-            print("stack registers empty, getting registers")
-            self.getRegs()
+        #if (not self.stackRegisterAddresses):
+        #    print("stack registers empty, getting registers")
+        self.getRegs()
         boundryList = ["esp", "saved_ebp", "previous_sp"]
         bigListNames = self.stackRegisterNames
         bigListAddrs = self.stackRegisterAddresses
         bigListData = [] 
-        for i in range(len(bigListData)):
+        #print("addrs and list getregpairs: ", bigListAddrs,bigListNames)
+        for i in range(len(bigListAddrs)):
             bigListData.append("")
+        #print("biglistdata-appended: ", bigListData)    
         #colors
         # for i in range(len(bigListNames)):
         #     for b in boundryList:
@@ -187,6 +189,7 @@ class Stack:
                     bigListData[i] = "$sp_"+spAddr
                 except:
                     pass
+        print("returning big list data: ",bigListData)        
         return bigListData
     #simple sorting function that sorts the registers by their address.    
     def sortRegs(self):
@@ -1564,9 +1567,9 @@ class pstack (gdb.Command):
             else:
                 print("updating gdb window pstack")
                 pair = myProgramStack.getRegisterPairs()
-                print("before update: ", myProgramStack.stackRegisterNames,myProgramStack.stackRegisterNames,pair)
+                print("before update: ", myProgramStack.stackRegisterNames,myProgramStack.stackRegisterAddresses,pair)
                 #print(myProgramVariables.variableInfo)
-                gdbWindow.updateGDBLabelText([myProgramStack.stackRegisterNames,myProgramStack.stackRegisterNames,pair])    
+                gdbWindow.updateGDBLabelText([myProgramStack.stackRegisterNames,myProgramStack.stackRegisterAddresses,pair])    
             # if window.isVisible():   
             #     myProgramStack.printAll()
         else:
@@ -1979,15 +1982,16 @@ class pprint (gdb.Command):
         if(from_tty):
             if(not myProgram.window.isVisible()):
                 printPair(bigListNames,bigListAddrs,bigListColors,bigListData)
+          
+        sortedNames, sortedAddrs, sortedColors, sortedData = sortTheBigList(bigListNames,bigListAddrs,bigListColors,bigListData)
         if(myProgram.window.isVisible()):
             #printPairNoColor(bigListNames,bigListAddrs,bigListData)
             #myProgram.window.gdbWindow.pprintGDBWindow(bigListNames,bigListAddrs,bigListColors,bigListData)
-            myProgram.window.gdbWindow.updateGDBLabelText([bigListNames,bigListAddrs,bigListColors,bigListData],1)
+            myProgram.window.gdbWindow.updateGDBLabelText([sortedNames,sortedAddrs,sortedColors,sortedData],1)
             #<<TODO>>
             #the window is visible here, so lets display the contents there
             #<<rethere>>
-            #printPair(bigListNames,bigListAddrs,bigListColors,bigListData)    
-        sortedNames, sortedAddrs, sortedColors, sortedData = sortTheBigList(bigListNames,bigListAddrs,bigListColors,bigListData)
+            #printPair(bigListNames,bigListAddrs,bigListColors,bigListData)  
         #short message about what color things are 
         varout = colored("variables "+myProgram.varColor,myProgram.varColor)
         funcout= colored("functions "+myProgram.funcColor,myProgram.funcColor) 
