@@ -1548,6 +1548,7 @@ def printRegisters(reglist, regaddrs):
     #         print(f"reglist {reglist[i]}")
 
 #gdb command that will print stack registers including certain things from info frame and stat/maps
+#<<TODO>> add 3rd column of what these things are pointing too 
 class pstack (gdb.Command):
     """print the stack registers known at the current point"""
     def __init__(self):
@@ -1563,6 +1564,7 @@ class pstack (gdb.Command):
             myProgramStack.getRegs()
             if(from_tty):
                 if(not myProgram.window.isVisible()):
+                    myProgramStack.sortRegs()
                     myProgramStack.printAll()
             else:
                 print("updating gdb window pstack")
