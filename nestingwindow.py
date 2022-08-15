@@ -621,6 +621,8 @@ class Program:
             #self.line_edit2 = [QLabel(self)] * 100
             self.line_edit2 = QLabel(self)
             #self.line_edit2.move(50,50)
+            #self.toggle_window(self.gdbWindow)
+            #gdb.execute('pwi')
             class gdbHideWindow (gdb.Command):
                 """hide the window"""
                 def __init__(self):
@@ -877,15 +879,22 @@ class Program:
                     self.codeLabels[i].setText("")
                 with open(filename,'r') as f:
                     text = f.readlines()
-                
-                out = gdb.execute("info line", to_string = True)
-                m = re.search(" \d+ ", out)
+                #run the frame command to get the current line the program is on
+                # Note* this is different than the info frame command.                 
+                out = gdb.execute("frame", to_string = True)
+                lines = out.splitlines()            
+                m = re.search("^\d+", lines[1])
+
                 try:
-                    num = m.group(0)[1:-1]
+
+                    num = m.group(0)#[1:-1]
                     numInt = int(num)
+                    
                 except:
+                    
                     pass
                 # text = gdb.execute("list",to_string=True)
+                    
                 t2 = "~~~~~~~~~~~~~~~"+self.localfilepath+"~~~~~~~~~~~~~~"
                 t2= t2 + "\n"
                 
@@ -918,7 +927,7 @@ class Program:
                     self.codeLabels[j].setText(f"{line}")
                     j=j+1
                 
-                #t2 = ""
+                    #t2 = ""
 
             def get(self):
                 print(self.label.text())  
@@ -1522,6 +1531,15 @@ myProgramVariables = myProgram.programVariables
 myProgramWindow = myProgram.window
 gdbWindow = myProgramWindow.gdbWindow
 gdbWindow.getBreakpoints()
+#neat but not helpul
+# import inspect
+# for name, obj in inspect.getmembers(sys.modules[__name__]):
+#         if inspect.isclass(obj):
+#             s = str(obj)
+#             if s[8] != 'P' and s[8] != 'Q':
+#                 print(s)
+#             #print(s[8])
+#             #print(obj)
 #gdbWindow.updateCodeLabels()
 # print("testing some function")
 # stuff = [["edx","eap","aaa"],["0x0000","0xaaaa","0xffff"],["data", "no data", "blargus"]]
@@ -2340,6 +2358,7 @@ class gdbinitwindow (gdb.Command):
             global window
             window = myProgram.window
             window.show()
+            window.gdbWindow.show()
             sys.exit(app.exec())
         except:
             pass    
