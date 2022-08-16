@@ -5,11 +5,11 @@ from pygments.lexers.c_cpp import CLexer
 from pygments.formatters import Terminal256Formatter, HtmlFormatter
 from PyQt6.QtCore import QSize, Qt
 from PyQt6.QtWidgets import *
-
-
-
-# Subclass QMainWindow to customize your application's main window
 import sys
+
+
+# # Subclass QMainWindow to customize your application's main window
+
 
 from PyQt6.QtCore import QSize, Qt
 from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton
@@ -22,7 +22,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
 
-        self.setWindowTitle("My App")
+        
             #styles ['default', 'emacs', 'friendly', 'friendly_grayscale', 'colorful', 'autumn', 
             # 'murphy', 'manni', 'material', 'monokai', 'perldoc', 'pastie', 'borland', 'trac', 
             # 'native', 'fruity', 'bw', 'vim', 'vs', 'tango', 'rrt', 'xcode', 'igor', 
@@ -33,12 +33,14 @@ class MainWindow(QMainWindow):
         s = 'vs'
         
         fname = "simple_program.c"
+        self.setWindowTitle(f"{fname} Code Window")
         with open(fname,'r') as f:
             code = f.read()
         lexer = CLexer() 
         
         formatter = HtmlFormatter(style=s)
         result = highlight(code, lexer, formatter)
+        print(result)
         css = formatter.get_style_defs()
         self.layout = QGridLayout() 
         
@@ -79,16 +81,33 @@ class MainWindow(QMainWindow):
             notFirstRun = True
             #print(res2)
             #print(i)
-            res3 = re.sub("""<span class="w"> +<\/font>""","""   """,res2)
+            res3 = res2
+            #res3 = re.sub("""<span class="w"> +<\/font>""","""  """,res2)
             #res4 = re.sub(f"""<span class="n">""","xxxxxxxxxxx<font>",res3)
+            breaktext = QLabel("")
         for line in res3.splitlines():
             label = QLabel("")
-            label.setText(line)
+            label.setText("\n")
             text2.append(label)
             print(line)
         #-1 gets rid of the </pre></div> artifact at the end of the list
-        for i in range(len(text2)-1):
-            self.layout.addWidget(text2[i])
+        # for i in range(len(text2)-1):
+        #     self.layout.addWidget(text2[i])
+        label2 = QLabel("")    
+        label2.setText(res3)
+        #self.layout.addWidget(label2,1,1)
+        breaknum =14
+        bst = ""
+        for i in range(len(res3.splitlines())):
+            if(i == breaknum):
+                bst = bst + f"{i}--->\n"
+                
+            else:
+                bst=bst+f"{i}\n"
+        label1 = QLabel("")
+        label1.setText(bst)        
+        self.layout.addWidget(label1,0,0)
+        self.layout.addWidget(label2,0,1)
         #text2.setText(res2)
         
         #text1.setStyleSheet("color:red")
@@ -110,11 +129,45 @@ window.show()
 
 app.exec()
 
-# print("~~~~~~")
-# print(result)
+#print("~~~~~~")
+#print(result)
 import re
 
 # fc = """<font color="#000080">"""
 # res = re.sub("""<span class="cp">""",fc,result)
 # res2 = re.sub("</span>","</font>",res)
 #print(res2)
+
+
+# fname = "simple_program.c"
+# with open(fname,'r') as f:
+#     code = f.read()
+# lexer = CLexer() 
+# s = 'vs'
+# formatter = HtmlFormatter(style=s)
+# result = highlight(code, lexer, formatter)
+# lines = result.splitlines()
+# uniqueCtr = 0
+# outarr = []
+# for i in range(len(lines)):
+#     print(lines[i])
+#     st = ""
+#     for j in range(len(lines[i])):
+#         st = st+lines[i][j]
+#         if(st == "<span"):
+#             uniqueSpanNumber = 0
+#             st = f"<span{uniqueCtr}"
+#             pairedSpan = ""
+#             rep = lines[i][j].replace("</span>",f"</span{uniqueCtr}",uniqueCtr)
+#             rep = lines[i][j].replace("</span>",f"</span{uniqueCtr}",uniqueCtr-1)
+#             uniqueCtr=uniqueCtr+1
+#             print("REP:",rep)
+            
+#             # for k in range(len(lines[i])+j+1):
+                
+#             #     if lines[i][k] == "<":
+#             #         lines[i][k:7] = f"</span{uniqueCtr}"
+#             #         uniqueCtr=uniqueCtr+1
+#     outarr.append(st)
+# for o in outarr:
+#     print(o)    

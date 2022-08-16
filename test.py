@@ -3,87 +3,83 @@ from pygments.style import Style
 from pygments.token import *
 from pygments.lexers.c_cpp import CLexer
 from pygments.formatters import Terminal256Formatter, HtmlFormatter
-import sys 
+from PyQt6.QtCore import QSize, Qt
+from PyQt6.QtWidgets import *
+import sys
+
+
+# # Subclass QMainWindow to customize your application's main window
+
+
+from PyQt6.QtCore import QSize, Qt
+from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton
+
+#for l in lines:
+#     print(l)
 import re
-fname = "simple_program.c"
-with open(fname,'r') as f:
-    code = f.read()
-lexer = CLexer() 
-s = 'vs'
-formatter = HtmlFormatter(style=s)
-result = highlight(code, lexer, formatter)
-css = formatter.get_style_defs()
+class WindowOne(QMainWindow):
 
+        def __init__(self):
+            super(WindowOne, self).__init__()
+            self.layout = QGridLayout()
+            self.label = QLabel("WINDOW ONE")
+            button = QPushButton("BUTTON")
+            self.layout.addWidget(self.label)
+            self.layout.addWidget(button)
+            self.show()
 
-text2 = [] 
+class MainWindow(QMainWindow):
 
-
-lines = css.splitlines()
-
-classesList = []
-colorsList = []
-print (result)
-for line in lines:
-    #if i > 5:
-        color = "<font"
-        m = re.split("{|}",line)
-        print(line)
-        print(m[0][1:])
-        print(m[1], m[1][1])
-        if(m[1][1]=='f'):
-            colorsList.append("")
-        else:
-            cout = re.sub(': ',"=",m[1])
-            color = color+ cout[:-1] +">"
-            colorsList.append(color)
-        classesList.append(m[0][1:])
+    def __init__(self):
+        super(MainWindow, self).__init__()
+        #self.w = WindowOne()
         
-    #i = i + 1
-classesList.append("w")
-colorsList.append("<font color=#000000>")
-notFirstRun = False
-# i = 0
-# for c,color in zip(classesList,colorsList):
-#     tmp = ""
-#     if notFirstRun:
-#         result = res      
-#     #c = classesList[i]
-#     #color = colorsList[i]
-#     #print(f"class and color : {c[:-1]}, {color}")    
-#     res = re.sub(f"""<span class="{c[:-1]}">""",color,result)
-#     tmp = res 
-#     print (i, res)
-#     #res2 = re.sub("</span>","</font>",res)
-#     notFirstRun = True
-#     i = i +1
-#     #print(res2)
-#     #print(i)
-#     #res3 = re.sub("""<span class="w"> +<\/font>""","""<span> </span>""",res2)
-# #print(res3)
-# full  = highlight(code, lexer, formatter)
-lines = result.splitlines()
-ms = []
-for i in range(len(lines)):
+            #styles ['default', 'emacs', 'friendly', 'friendly_grayscale', 'colorful', 'autumn', 
+            # 'murphy', 'manni', 'material', 'monokai', 'perldoc', 'pastie', 'borland', 'trac', 
+            # 'native', 'fruity', 'bw', 'vim', 'vs', 'tango', 'rrt', 'xcode', 'igor', 
+            # 'paraiso-light', 'paraiso-dark', 'lovelace', 'algol', 'algol_nu', 'arduino', 
+            # 'rainbow_dash', 'abap', 'solarized-dark', 'solarized-light', 'sas', 'stata', 
+            # 'stata-light', 'stata-dark', 'inkpot', 'zenburn', 'gruvbox-dark', 'gruvbox-light', 
+            # 'dracula', 'one-dark', 'lilypond']
+        self.layout = QGridLayout() 
+        self.w1 = WindowOne()
+        self.w2 = self.WindowTwo()
+        self.setWindowTitle(f"multiple Windows")
+        button1 = QPushButton("button 1")
+        button2 = QPushButton("button 2")
+        button1.clicked.connect(self.buttonOneClicked)
+        button2.clicked.connect(self.buttonTwoClicked)
+        
+        self.layout.addWidget(button1,0,0)
+        self.layout.addWidget(button2,0,1)
     
-    line = lines[i]
-    m = re.split("<span|</span>",line)
-    ms.append(m)
-
-for line in lines:
-    print(line)
-# i = 0
-# j = 0
-# for line in ms:
-#     for thing in line:
-#         print(thing)
-
-# for i in range(len(ms)):
-#     for j in range(len(ms[i])):
-#         print(f"{i} , {j} , x{ms[i][j]}x")
         
-import re 
-line = """<span class="n">printf</span><span class="p">(</span><span class="s">&quot;function: %d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">t</span><span class="p">);</span><span class="w"></span>"""
-word = re.findall(">.*<",line)
-print(word)
+        widget = QWidget()
+        widget.setLayout(self.layout)
+        self.setCentralWidget(widget)
+    def buttonOneClicked(self):
+        print("button 1 clicked")
+        self.w1.show()
+        
 
-print(css)
+    def buttonTwoClicked(self):
+        print("button 2 clicked")    
+
+    
+    class WindowTwo(QWidget):
+
+        def __init__(self):
+            #super(MainWindow, self).__init__()
+            self.layout = QGridLayout()
+            label = QLabel("WINDOW Two")
+            self.layout.addWidget(label)
+#print(result)
+
+app = QApplication(sys.argv)
+#app.setStyleSheet(css)
+window = MainWindow()
+
+
+window.show()
+
+app.exec()
