@@ -2,30 +2,32 @@ invoking print all stacks
 from_tty: False
 len arg: 0
 ~~~~stack number 0~~~~
+print pair no color invoked
 ---------------------------
 reg/var/func/info    address       what is stored
 ---------------------------
-ecx                  0x55362a26     
 function             0x5655620d     function
 frame_eip            0x56556289     
 eip                  0x56556289     
 main                 0x56556289     function
 B                    0x5655900c     0
 A                    0x56559010     0
-saved_eip            0xf7de1ed5     eip_0x56556289
-edi                  0xf7faf000     
-esi                  0xf7faf000     
-eax                  0xf7fb1088     
+ecx                  0xb92d1ac3     
+saved_eip            0xf7de4ed5     eip_0x56556289
+edi                  0xf7fb2000     
+esi                  0xf7fb2000     
+eax                  0xf7fb4088     
 map_stack_top        0xfffdd000     
-esp                  0xffffcedc     $sp
-saved_eip            0xffffcedc     eip_0x56556289
-previous_sp          0xffffcee0     $sp_0xffffcedc
-edx                  0xffffcf04     
+esp                  0xffffcddc     $sp
+saved_eip            0xffffcddc     eip_0x56556289
+previous_sp          0xffffcde0     $sp_0xffffcddc
+edx                  0xffffce04     
 map_stack_bottom     0xffffe000      
 buffer               0xffffffec     
 array                0xfffffff0     
 x                    0xfffffff4     
 ~~~~stack number 1~~~~
+print pair no color invoked
 ---------------------------
 reg/var/func/info    address       what is stored
 ---------------------------
@@ -33,26 +35,349 @@ function             0x5655620d     function
 main                 0x56556289     function
 eip                  0x565562aa     
 frame_eip            0x565562aa     
-ebx                  0x56558fd0     saved_ebx_0xffffcec4
+ebx                  0x56558fd0     saved_ebx_0xffffcdc4
 B                    0x5655900c     0
 A                    0x56559010     0
-saved_eip            0xf7de1ed5     eip_0x565562aa
-edi                  0xf7faf000     
-esi                  0xf7faf000     
-eax                  0xf7fb1088     
+saved_eip            0xf7de4ed5     eip_0x565562aa
+edi                  0xf7fb2000     
+esi                  0xf7fb2000     
+eax                  0xf7fb4088     
 map_stack_top        0xfffdd000     
-arglist              0xffffceac     
-stored_locals        0xffffceac     
-esp                  0xffffceb0     $sp
-buffer               0xffffceb4     4\321\377\377
-array                0xffffceb8     *)
-x                    0xffffcebc     1448436497
-saved_ebx            0xffffcec4     ebx_0x56558fd0
-saved_ebp            0xffffcec8     
-ebp                  0xffffcec8     
-saved_eip            0xffffcedc     eip_0x565562aa
-previous_sp          0xffffcee0     $sp_0xffffceb0
-ecx                  0xffffcee0     
-edx                  0xffffcf04     
-argv                 0xffffcf74     **)
+arglist              0xffffcdac     
+stored_locals        0xffffcdac     
+esp                  0xffffcdb0     $sp
+buffer               0xffffcdb4     Y\320\377\377
+array                0xffffcdb8     *)
+x                    0xffffcdbc     1448436497
+saved_ebx            0xffffcdc4     ebx_0x56558fd0
+saved_ebp            0xffffcdc8     
+ebp                  0xffffcdc8     
+saved_eip            0xffffcddc     eip_0x565562aa
+previous_sp          0xffffcde0     $sp_0xffffcdb0
+ecx                  0xffffcde0     
+edx                  0xffffce04     
+argv                 0xffffce74     **)
+map_stack_bottom     0xffffe000      
+~~~~stack number 2~~~~
+print pair no color invoked
+---------------------------
+reg/var/func/info    address       what is stored
+---------------------------
+ecx                  0x21dd9     
+function             0x5655620d     function
+main                 0x56556289     function
+eip                  0x565562bd     
+frame_eip            0x565562bd     
+ebx                  0x56558fd0     saved_ebx_0xffffcdc4
+B                    0x5655900c     0
+A                    0x56559010     0
+map_heap_top         0x5655a000     
+eax                  0x5655a1a0     
+edx                  0x5655a228     
+map_heap_bottom      0x5657c000      
+saved_eip            0xf7de4ed5     eip_0x565562bd
+edi                  0xf7fb2000     
+esi                  0xf7fb2000     
+map_stack_top        0xfffdd000     
+arglist              0xffffcdac     
+stored_locals        0xffffcdac     
+esp                  0xffffcdb0     $sp
+buffer               0xffffcdb4     
+array                0xffffcdb8     *)
+x                    0xffffcdbc     1448436497
+saved_ebx            0xffffcdc4     ebx_0x56558fd0
+saved_ebp            0xffffcdc8     
+ebp                  0xffffcdc8     
+saved_eip            0xffffcddc     eip_0x565562bd
+previous_sp          0xffffcde0     $sp_0xffffcdb0
+argv                 0xffffce74     **)
+map_stack_bottom     0xffffe000      
+~~~~stack number 3~~~~
+print pair no color invoked
+---------------------------
+reg/var/func/info    address       what is stored
+---------------------------
+ecx                  0x21bc9     
+function             0x5655620d     function
+main                 0x56556289     function
+eip                  0x565562d0     
+frame_eip            0x565562d0     
+ebx                  0x56558fd0     saved_ebx_0xffffcdc4
+B                    0x5655900c     0
+A                    0x56559010     0
+map_heap_top         0x5655a000     
+eax                  0x5655a230     
+edx                  0x5655a438     
+map_heap_bottom      0x5657c000      
+saved_eip            0xf7de4ed5     eip_0x565562d0
+edi                  0xf7fb2000     
+esi                  0xf7fb2000     
+map_stack_top        0xfffdd000     
+arglist              0xffffcdac     
+stored_locals        0xffffcdac     
+esp                  0xffffcdb0     $sp
+buffer               0xffffcdb4     
+array                0xffffcdb8     *)
+x                    0xffffcdbc     1448436497
+saved_ebx            0xffffcdc4     ebx_0x56558fd0
+saved_ebp            0xffffcdc8     
+ebp                  0xffffcdc8     
+saved_eip            0xffffcddc     eip_0x565562d0
+previous_sp          0xffffcde0     $sp_0xffffcdb0
+argv                 0xffffce74     **)
+map_stack_bottom     0xffffe000      
+~~~~stack number 4~~~~
+print pair no color invoked
+---------------------------
+reg/var/func/info    address       what is stored
+---------------------------
+ecx                  0x21bc9     
+eip                  0x5655620d     
+frame_eip            0x5655620d     
+function             0x5655620d     function
+main                 0x56556289     function
+saved_eip            0x565562da     eip_0x5655620d
+ebx                  0x56558fd0     
+B                    0x5655900c     0
+A                    0x56559010     0
+map_heap_top         0x5655a000     
+eax                  0x5655a230     
+edx                  0x5655a438     
+map_heap_bottom      0x5657c000      
+edi                  0xf7fb2000     
+esi                  0xf7fb2000     
+map_stack_top        0xfffdd000     
+rc                   0xffffcd7c     -136003170
+stuff                0xffffcd80     0x0
+buf                  0xffffcd87     <incomplete
+previous_sp          0xffffcd98     $sp_0xffffcd9c
+esp                  0xffffcd9c     $sp
+ebp                  0xffffcdc8     
+map_stack_bottom     0xffffe000      
+~~~~stack number 5~~~~
+print pair no color invoked
+---------------------------
+reg/var/func/info    address       what is stored
+---------------------------
+ecx                  0x21bc9     
+function             0x5655620d     function
+frame_eip            0x5655622e     
+eip                  0x5655622e     
+main                 0x56556289     function
+saved_eip            0x565562da     eip_0x5655622e
+ebx                  0x56558fd0     
+B                    0x5655900c     0
+A                    0x56559010     0
+map_heap_top         0x5655a000     
+edx                  0x5655a438     
+map_heap_bottom      0x5657c000      
+edi                  0xf7fb2000     
+esi                  0xf7fb2000     
+map_stack_top        0xfffdd000     
+previous_sp          0xffffcd6c     $sp_0xffffcd70
+esp                  0xffffcd70     $sp
+rc                   0xffffcd7c     -136003170
+stuff                0xffffcd80     0x0
+buf                  0xffffcd87     <incomplete
+ebp                  0xffffcd98     
+map_stack_bottom     0xffffe000      
+~~~~stack number 6~~~~
+print pair no color invoked
+---------------------------
+reg/var/func/info    address       what is stored
+---------------------------
+ecx                  0x21ba9     
+function             0x5655620d     function
+frame_eip            0x5655623e     
+eip                  0x5655623e     
+main                 0x56556289     function
+saved_eip            0x565562da     eip_0x5655623e
+ebx                  0x56558fd0     
+B                    0x5655900c     0
+A                    0x56559010     0
+map_heap_top         0x5655a000     
+eax                  0x5655a440     
+edx                  0x5655a458     
+map_heap_bottom      0x5657c000      
+edi                  0xf7fb2000     
+esi                  0xf7fb2000     
+map_stack_top        0xfffdd000     
+previous_sp          0xffffcd6c     $sp_0xffffcd70
+esp                  0xffffcd70     $sp
+rc                   0xffffcd7c     -136003170
+stuff                0xffffcd80     
+buf                  0xffffcd87     <incomplete
+ebp                  0xffffcd98     
+map_stack_bottom     0xffffe000      
+~~~~stack number 7~~~~
+print pair no color invoked
+---------------------------
+reg/var/func/info    address       what is stored
+---------------------------
+ecx                  0x21ba9     
+function             0x5655620d     function
+frame_eip            0x5655625b     
+eip                  0x5655625b     
+main                 0x56556289     function
+saved_eip            0x565562da     eip_0x5655625b
+ebx                  0x56558fd0     
+B                    0x5655900c     0
+A                    0x56559010     0
+map_heap_top         0x5655a000     
+eax                  0x5655a440     
+edx                  0x5655a458     
+map_heap_bottom      0x5657c000      
+edi                  0xf7fb2000     
+esi                  0xf7fb2000     
+map_stack_top        0xfffdd000     
+previous_sp          0xffffcd6c     $sp_0xffffcd70
+esp                  0xffffcd70     $sp
+rc                   0xffffcd7c     -136003170
+stuff                0xffffcd80     
+buf                  0xffffcd87     <incomplete
+ebp                  0xffffcd98     
+map_stack_bottom     0xffffe000      
+~~~~stack number 8~~~~
+print pair no color invoked
+---------------------------
+reg/var/func/info    address       what is stored
+---------------------------
+ecx                  0x21ba9     
+function             0x5655620d     function
+frame_eip            0x56556262     
+eip                  0x56556262     
+main                 0x56556289     function
+saved_eip            0x565562da     eip_0x56556262
+ebx                  0x56558fd0     
+B                    0x5655900c     0
+A                    0x56559010     0
+map_heap_top         0x5655a000     
+eax                  0x5655a440     
+edx                  0x5655a458     
+map_heap_bottom      0x5657c000      
+edi                  0xf7fb2000     
+esi                  0xf7fb2000     
+map_stack_top        0xfffdd000     
+previous_sp          0xffffcd6c     $sp_0xffffcd70
+esp                  0xffffcd70     $sp
+rc                   0xffffcd7c     0
+stuff                0xffffcd80     
+buf                  0xffffcd87     <incomplete
+ebp                  0xffffcd98     
+map_stack_bottom     0xffffe000      
+~~~~stack number 9~~~~
+print pair no color invoked
+---------------------------
+reg/var/func/info    address       what is stored
+---------------------------
+function             0x5655620d     function
+frame_eip            0x56556270     
+eip                  0x56556270     
+main                 0x56556289     function
+saved_eip            0x565562da     eip_0x56556270
+ebx                  0x56558fd0     
+B                    0x5655900c     0
+A                    0x56559010     0
+map_heap_top         0x5655a000     
+ecx                  0x5655a010     
+map_heap_bottom      0x5657c000      
+edi                  0xf7fb2000     
+esi                  0xf7fb2000     
+map_stack_top        0xfffdd000     
+previous_sp          0xffffcd6c     $sp_0xffffcd70
+esp                  0xffffcd70     $sp
+rc                   0xffffcd7c     0
+stuff                0xffffcd80     
+buf                  0xffffcd87     <incomplete
+ebp                  0xffffcd98     
+map_stack_bottom     0xffffe000      
+~~~~stack number 10~~~~
+print pair no color invoked
+---------------------------
+reg/var/func/info    address       what is stored
+---------------------------
+function             0x5655620d     function
+frame_eip            0x56556273     
+eip                  0x56556273     
+main                 0x56556289     function
+saved_eip            0x565562da     eip_0x56556273
+ebx                  0x56558fd0     
+B                    0x5655900c     0
+A                    0x56559010     0
+map_heap_top         0x5655a000     
+ecx                  0x5655a010     
+map_heap_bottom      0x5657c000      
+edi                  0xf7fb2000     
+esi                  0xf7fb2000     
+map_stack_top        0xfffdd000     
+previous_sp          0xffffcd6c     $sp_0xffffcd70
+esp                  0xffffcd70     $sp
+rc                   0xffffcd7c     0
+stuff                0xffffcd80     
+buf                  0xffffcd87     <incomplete
+ebp                  0xffffcd98     
+map_stack_bottom     0xffffe000      
+~~~~stack number 11~~~~
+print pair no color invoked
+---------------------------
+reg/var/func/info    address       what is stored
+---------------------------
+function             0x5655620d     function
+main                 0x56556289     function
+eip                  0x565562e0     
+frame_eip            0x565562e0     
+ebx                  0x56558fd0     saved_ebx_0xffffcdc4
+B                    0x5655900c     0
+A                    0x56559010     0
+map_heap_top         0x5655a000     
+ecx                  0x5655a010     
+map_heap_bottom      0x5657c000      
+saved_eip            0xf7de4ed5     eip_0x565562e0
+edi                  0xf7fb2000     
+esi                  0xf7fb2000     
+map_stack_top        0xfffdd000     
+arglist              0xffffcdac     
+stored_locals        0xffffcdac     
+esp                  0xffffcdb0     $sp
+buffer               0xffffcdb4     
+array                0xffffcdb8     *)
+x                    0xffffcdbc     0
+saved_ebx            0xffffcdc4     ebx_0x56558fd0
+saved_ebp            0xffffcdc8     
+ebp                  0xffffcdc8     
+saved_eip            0xffffcddc     eip_0x565562e0
+previous_sp          0xffffcde0     $sp_0xffffcdb0
+argv                 0xffffce74     **)
+map_stack_bottom     0xffffe000      
+~~~~stack number 12~~~~
+print pair no color invoked
+---------------------------
+reg/var/func/info    address       what is stored
+---------------------------
+function             0x5655620d     function
+main                 0x56556289     function
+eip                  0x565562e5     
+frame_eip            0x565562e5     
+ebx                  0x56558fd0     saved_ebx_0xffffcdc4
+B                    0x5655900c     0
+A                    0x56559010     0
+map_heap_top         0x5655a000     
+ecx                  0x5655a010     
+map_heap_bottom      0x5657c000      
+saved_eip            0xf7de4ed5     eip_0x565562e5
+edi                  0xf7fb2000     
+esi                  0xf7fb2000     
+map_stack_top        0xfffdd000     
+arglist              0xffffcdac     
+stored_locals        0xffffcdac     
+esp                  0xffffcdb0     $sp
+buffer               0xffffcdb4     
+array                0xffffcdb8     *)
+x                    0xffffcdbc     0
+saved_ebx            0xffffcdc4     ebx_0x56558fd0
+saved_ebp            0xffffcdc8     
+ebp                  0xffffcdc8     
+saved_eip            0xffffcddc     eip_0x565562e5
+previous_sp          0xffffcde0     $sp_0xffffcdb0
+argv                 0xffffce74     **)
 map_stack_bottom     0xffffe000      

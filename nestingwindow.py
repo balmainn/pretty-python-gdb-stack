@@ -2047,6 +2047,7 @@ class pprint (gdb.Command):
             trackedSet = set(s[1])
             
             print("set difference: ", localSet - trackedSet)
+            print("len of labels:", len(sortedNames))
             #change to != later <<TODO>>
             if(trackedSet - localSet == set()):
                 if(not myProgram.window.isVisible()):
