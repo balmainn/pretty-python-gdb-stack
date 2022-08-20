@@ -189,7 +189,8 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.scroll)
         self.outerLayout = QVBoxLayout()
         self.buttonsLayout = QHBoxLayout()
-        self.labelsLayout = QGridLayout() 
+        #self.labelsLayout = QGridLayout() 
+        self.labelsLayout = QVBoxLayout() 
         self.w1 = CodeWindow()
         self.w2 = self.WindowTwo()
         self.setWindowTitle(f"multiple Windows")
@@ -198,36 +199,36 @@ class MainWindow(QMainWindow):
         helpButton =QPushButton("Help")
         self.gdbInput = QLineEdit()
         self.gdbInput.returnPressed.connect(self.gdbInputReturnPressed)
+        self.gdbInput.setMaximumWidth(400)
 
         codeWindowButton.clicked.connect(self.codeWindowButtonClicked)
         button2.clicked.connect(self.buttonTwoClicked)
         helpButton.clicked.connect(self.helpButtonClicked)
 
-
-        self.nameLabels = [] 
-        self.addressLabels = []
-        self.dataLabels = [] 
-
-        
-        num_labels = 10
-        for i in range(num_labels):
-            nameLabel = QLabel("name label")
+        self.centralLabel = QLabel("pprogram output will populate here")
+        self.labelsLayout.addWidget(self.centralLabel)
+        # self.nameLabels = [] 
+        # self.addressLabels = []
+        # self.dataLabels = [] 
+        #num_labels = 10
+        # for i in range(num_labels):
+        #     nameLabel = QLabel("name label")
             
-            addressLabel = QLabel("Address Label")
-            dataLabel = QLabel("Data Label")
-            self.nameLabels.append(nameLabel)
-            self.addressLabels.append(addressLabel)
-            self.dataLabels.append(dataLabel)
-        for i in range(num_labels):    
-            self.nameLabels[i].setStyleSheet("border: 1px solid black;")
-            self.addressLabels[i].setStyleSheet("border: 1px solid black;")
-            self.dataLabels[i].setStyleSheet("border: 1px solid black;")
-            self.labelsLayout.addWidget(self.nameLabels[i],i,0)
-            #self.nameLabels[i].setFixedWidth(10)
-            self.labelsLayout.addWidget(self.addressLabels[i],i,1)
-            self.labelsLayout.addWidget(self.dataLabels[i],i,2)
-        for i in range(num_labels):
-            self.nameLabels[i].setText(f"{i}name label")
+        #     addressLabel = QLabel("Address Label")
+        #     dataLabel = QLabel("Data Label")
+        #     self.nameLabels.append(nameLabel)
+        #     self.addressLabels.append(addressLabel)
+        #     self.dataLabels.append(dataLabel)
+        # for i in range(num_labels):    
+        #     self.nameLabels[i].setStyleSheet("border: 1px solid black;")
+        #     self.addressLabels[i].setStyleSheet("border: 1px solid black;")
+        #     self.dataLabels[i].setStyleSheet("border: 1px solid black;")
+        #     self.labelsLayout.addWidget(self.nameLabels[i],i,0)
+        #     #self.nameLabels[i].setFixedWidth(10)
+        #     self.labelsLayout.addWidget(self.addressLabels[i],i,1)
+        #     self.labelsLayout.addWidget(self.dataLabels[i],i,2)
+        # for i in range(num_labels):
+        #     self.nameLabels[i].setText(f"{i}name label")
 
 
         #set the width of the buttons 
@@ -248,7 +249,7 @@ class MainWindow(QMainWindow):
         self.outerLayout.addLayout(self.labelsLayout)
         #i dunno about this one 
         self.outerLayout.addWidget(self.gdbInput)
-        self.gdbOutputText = QLabel("gdb output goes here")
+        self.gdbOutputText = QLabel("output from gdb commands will populate here.")
         self.outerLayout.addWidget(self.gdbOutputText)
         #self.gdbOutputText.setFixedWidth(500)
         
@@ -263,8 +264,13 @@ class MainWindow(QMainWindow):
         text = self.gdbInput.text()
         print(text)    
         self.gdbInput.setText("")
-        
         self.gdbOutputText.setText(text)
+        # try:
+        #     out = gdb.execute(text,to_string=True)
+        #     self.gdbOutputText.setText(out)
+        # except gdb.error as e:
+        #     self.gdbOutputText.setText(str(e))
+        #     pass
     def helpButtonClicked(self):
         dlg = HelpDialogue()
         dlg.exec()
@@ -308,14 +314,28 @@ class MainWindow(QMainWindow):
             self.layout.addWidget(label,0,1)
 
 #print(result)
+class pwindow (gdb.Command):
+    """reload this file, with changes"""
+    def __init__(self):
+                                 #cmd user types in goeshere
+        super(pwindow,self).__init__("pwindow",gdb.COMMAND_USER)
+    #this is what happens when they type in the command     
+    def invoke(self, arg, from_tty):
+        app = QApplication(sys.argv)
+        window = MainWindow()
+        window.show()
+        app.exec()
+pwindow() 
 
-app = QApplication(sys.argv)
-
+class resource (gdb.Command):
+    """reload this file, with changes"""
+    def __init__(self):
+                                 #cmd user types in goeshere
+        super(resource,self).__init__("rs",gdb.COMMAND_USER)
+    #this is what happens when they type in the command     
+    def invoke(self, arg, from_tty):
+        gdb.execute("source test.py")
+resource() 
 #app.setStyleSheet(css)
-window = MainWindow()
 
-
-window.show()
-
-app.exec()
 
