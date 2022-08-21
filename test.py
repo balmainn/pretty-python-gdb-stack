@@ -1,3 +1,5 @@
+#<<TODO>>need to add an on_exit button that asks if they want to quit gdb if the window is up. 
+
 from pygments import highlight
 from pygments.style import Style
 from pygments.token import *
@@ -5,7 +7,9 @@ from pygments.lexers.c_cpp import CLexer
 from pygments.formatters import Terminal256Formatter, HtmlFormatter
 from PyQt6.QtCore import QSize, Qt
 from PyQt6.QtWidgets import *
+from termcolor import colored
 import sys
+import os
 
 
 # # Subclass QMainWindow to customize your application's main window
@@ -17,301 +21,1212 @@ from  PyQt6 import *
 #for l in lines:
 #     print(l)
 import re
-
-class HelpDialogue(QDialog):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("<<TODO> CHANGEME Help Menu!")
-
-        
-
-        QBtn = QDialogButtonBox.StandardButton.Ok 
-
-        self.buttonBox = QDialogButtonBox(QBtn)
-        self.buttonBox.accepted.connect(self.accept)
-        
-        
-        self.layout = QVBoxLayout()
-        message = QLabel("<<TODO>> help menu diag box")
-        
-        self.layout.addWidget(message)
-        self.layout.addWidget(self.buttonBox)
-        
-        self.setLayout(self.layout)
-    def accepted(self):
-        self.close()
-
-class CustomDialog(QDialog):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-
-        self.setWindowTitle("<<TODO> CHANGEME!")
-
-        QBtn = QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
-
-        self.buttonBox = QDialogButtonBox(QBtn)
-        self.buttonBox.accepted.connect(self.accept)
-        self.buttonBox.rejected.connect(self.reject)
-        
-        self.layout = QVBoxLayout()
-        message = QLabel("Something happened, is that OK?")
-        self.diagInput = QLineEdit("enter filename")
-        self.diagInput.returnPressed.connect(self.accept)
-        
-        self.layout.addWidget(message)
-        self.layout.addWidget(self.buttonBox)
-        self.layout.addWidget(self.diagInput)
-        self.setLayout(self.layout)
-    def accept(self):
-        #this happens twice when pressing enter for some reason
-        text = self.diagInput.text()
-        print(text)
-        #get filename and save the output here 
-    def reject(self):
-        print("rejected")    
-        self.close()
-class CodeWindow(QMainWindow):
-
-    def __init__(self):
-        super().__init__()
-
-        
-            #styles ['default', 'emacs', 'friendly', 'friendly_grayscale', 'colorful', 'autumn', 
-            # 'murphy', 'manni', 'material', 'monokai', 'perldoc', 'pastie', 'borland', 'trac', 
-            # 'native', 'fruity', 'bw', 'vim', 'vs', 'tango', 'rrt', 'xcode', 'igor', 
-            # 'paraiso-light', 'paraiso-dark', 'lovelace', 'algol', 'algol_nu', 'arduino', 
-            # 'rainbow_dash', 'abap', 'solarized-dark', 'solarized-light', 'sas', 'stata', 
-            # 'stata-light', 'stata-dark', 'inkpot', 'zenburn', 'gruvbox-dark', 'gruvbox-light', 
-            # 'dracula', 'one-dark', 'lilypond']
-        s = 'vs'
-        
-        fname = "simple_program.c"
-        self.setWindowTitle(f"{fname} Code Window")
-        with open(fname,'r') as f:
-            code = f.read()
-        lexer = CLexer() 
-        
-        formatter = HtmlFormatter(style=s)
-        result = highlight(code, lexer, formatter)
-        #print(result)
-        css = formatter.get_style_defs()
-        self.layout = QGridLayout() 
-        
-        text2 = [] 
-        
-     
-        lines = css.splitlines()
-     
-        classesList = []
-        colorsList = []
-        
-        for line in lines:
-    #if i > 5:
-            color = "<font"
-            m = re.split("{|}",line)
-            #print(line)
-            #print(m[0][1:])
-            #print(m[1], m[1][1])
-            if(m[1][1]=='f'):
-                colorsList.append("")
-            else:
-                cout = re.sub(': ',"=",m[1])
-                color = color+ cout[:-1] +">"
-                colorsList.append(color)
-            classesList.append(m[0][1:])
-            #i = i + 1
-        classesList.append("w")
-        colorsList.append("<font color=#000000>")
-        notFirstRun = False
-        for c,color in zip(classesList,colorsList):
-            if notFirstRun:
-                result = res3
-            #c = classesList[i]
-            #color = colorsList[i]
-            #print(f"class and color : {c[:-1]}, {color}")    
-            res = re.sub(f"""<span class="{c[:-1]}">""",color,result)
-            res2 = re.sub("</span>","</font>",res)
-            notFirstRun = True
-            #print(res2)
-            #print(i)
-            res3 = res2
-            #res3 = re.sub("""<span class="w"> +<\/font>""","""  """,res2)
-            #res4 = re.sub(f"""<span class="n">""","xxxxxxxxxxx<font>",res3)
-            breaktext = QLabel("")
-        for line in res3.splitlines():
-            label = QLabel("")
-            label.setText("\n")
-            text2.append(label)
-            #print(line)
-        
-        label2 = QLabel("")    
-        label2.setText(res3)
-        #self.layout.addWidget(label2,1,1)
-        breaknum =14
-        bst = ""
-        for i in range(len(res3.splitlines())):
-            if(i == breaknum):
-                bst = bst + f"{i}--->\n"
-                
-            else:
-                bst=bst+f"{i}\n"
-        label1 = QLabel("")
-        label1.setText(bst)        
-        self.layout.addWidget(label1,0,0)
-        self.layout.addWidget(label2,0,1)
-       
-        widget = QWidget()
-        widget.setLayout(self.layout)
-        self.setCentralWidget(widget)
-
-       
-
-class MainWindow(QMainWindow):
-
-    def __init__(self):
-        super(MainWindow, self).__init__()
-        #self.w = WindowOne()
-        
-            #styles ['default', 'emacs', 'friendly', 'friendly_grayscale', 'colorful', 'autumn', 
-            # 'murphy', 'manni', 'material', 'monokai', 'perldoc', 'pastie', 'borland', 'trac', 
-            # 'native', 'fruity', 'bw', 'vim', 'vs', 'tango', 'rrt', 'xcode', 'igor', 
-            # 'paraiso-light', 'paraiso-dark', 'lovelace', 'algol', 'algol_nu', 'arduino', 
-            # 'rainbow_dash', 'abap', 'solarized-dark', 'solarized-light', 'sas', 'stata', 
-            # 'stata-light', 'stata-dark', 'inkpot', 'zenburn', 'gruvbox-dark', 'gruvbox-light', 
-            # 'dracula', 'one-dark', 'lilypond']
-        self.scroll = QScrollArea() 
-        self.widget = QWidget()
-        self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
-        self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
-        self.scroll.setWidgetResizable(True)
-        self.scroll.setWidget(self.widget)
-
-        self.setCentralWidget(self.scroll)
-        self.outerLayout = QVBoxLayout()
-        self.buttonsLayout = QHBoxLayout()
-        #self.labelsLayout = QGridLayout() 
-        self.labelsLayout = QVBoxLayout() 
-        self.w1 = CodeWindow()
-        self.w2 = self.WindowTwo()
-        self.setWindowTitle(f"multiple Windows")
-        codeWindowButton = QPushButton("Show/Hide Code Window")
-        button2 = QPushButton("button 2")
-        helpButton =QPushButton("Help")
-        self.gdbInput = QLineEdit()
-        self.gdbInput.returnPressed.connect(self.gdbInputReturnPressed)
-        self.gdbInput.setMaximumWidth(400)
-
-        codeWindowButton.clicked.connect(self.codeWindowButtonClicked)
-        button2.clicked.connect(self.buttonTwoClicked)
-        helpButton.clicked.connect(self.helpButtonClicked)
-
-        self.centralLabel = QLabel("pprogram output will populate here")
-        self.labelsLayout.addWidget(self.centralLabel)
-        # self.nameLabels = [] 
-        # self.addressLabels = []
-        # self.dataLabels = [] 
-        #num_labels = 10
-        # for i in range(num_labels):
-        #     nameLabel = QLabel("name label")
-            
-        #     addressLabel = QLabel("Address Label")
-        #     dataLabel = QLabel("Data Label")
-        #     self.nameLabels.append(nameLabel)
-        #     self.addressLabels.append(addressLabel)
-        #     self.dataLabels.append(dataLabel)
-        # for i in range(num_labels):    
-        #     self.nameLabels[i].setStyleSheet("border: 1px solid black;")
-        #     self.addressLabels[i].setStyleSheet("border: 1px solid black;")
-        #     self.dataLabels[i].setStyleSheet("border: 1px solid black;")
-        #     self.labelsLayout.addWidget(self.nameLabels[i],i,0)
-        #     #self.nameLabels[i].setFixedWidth(10)
-        #     self.labelsLayout.addWidget(self.addressLabels[i],i,1)
-        #     self.labelsLayout.addWidget(self.dataLabels[i],i,2)
-        # for i in range(num_labels):
-        #     self.nameLabels[i].setText(f"{i}name label")
+gdb.execute('b main')
+gdb.execute('r')
 
 
-        #set the width of the buttons 
-        codeWindowButton.setMaximumWidth(200)
-        button2.setMaximumWidth(100)
-        helpButton.setMaximumWidth(100)
+#heap class doesnt really do anything right now but may be utilized upon further development of this program.
+class Heap:
+    def __init__(self) -> None:
+        self.heapRegisterAddresses =  []
+        self.heapRegisterNames = []
+        self.heapBoth = [self.heapRegisterNames,self.heapRegisterAddresses]
+        self.heapInit = 0
+    def addReg(self, regName, regAddress):
+        
+        self.heapRegisterAddresses.append(regAddress)
+        self.heapRegisterNames.append(regName)
+        self.heapInit = 1
+    def sortRegs(self):
+        regaddrs = self.heapBoth[1]
+        reglist = self.heapBoth[0]
+        for i in range(len(regaddrs)):
+            for j in range(len(regaddrs)):
+                # < should be the correct direction
+                if int(regaddrs[i],16) < int(regaddrs[j],16):
+                # print(f"swapping: {(regaddrs[i])} with {(regaddrs[j])}")
+                    tmpaddrs = regaddrs[i]
+                    regaddrs[i] = regaddrs[j]
+                    regaddrs[j] = tmpaddrs
+                    templist = reglist[i]
+                    reglist[i] = reglist[j]
+                    reglist[j] = templist
+        self.heapBoth.clear()
+        self.heapBoth = [reglist, regaddrs]
+    def printAll(self):
+        print("printing heap")
+        for s in self.heapBoth:
+            print(s)
+        self.sortRegs()
+        print("sorted heap")
+        for s in self.heapBoth:
+            print(s)
 
-        align = Qt.AlignmentFlag(0) #align left
-        
-        self.buttonsLayout.addWidget(codeWindowButton,alignment=align)
-        
-        #codeWindowButton.setMaximumWidth(200)
-        
-        self.buttonsLayout.addWidget(button2,alignment=align)
-        self.buttonsLayout.addWidget(helpButton,alignment=align)
+#method to print regName and regAdder justified and nice 
+def testPrint(names, addrs):
+    #print("masterful test print (lol right)")
+    print(names, addrs)
+    const = 20
+    for i in range(len(names)):
+        #print(f"{names[i]}{' '.ljust(10)}{addrs[i]}")
+        nameSize = len(names[i])
+        spaceString = " "
+        for j in range(const-nameSize):
+            spaceString = spaceString + " "
+        print(f"{names[i]}{spaceString}{addrs[i]}")
+   
 
-        self.outerLayout.addLayout(self.buttonsLayout)
-        self.outerLayout.addLayout(self.labelsLayout)
-        #i dunno about this one 
-        self.outerLayout.addWidget(self.gdbInput)
-        self.gdbOutputText = QLabel("output from gdb commands will populate here.")
-        self.outerLayout.addWidget(self.gdbOutputText)
-        #self.gdbOutputText.setFixedWidth(500)
-        
-        
-        #self.gdbOutputText.setFixedWidth(10)
-        self.widget.setLayout(self.outerLayout)
-        #addWidget(widget, fromRow, fromColumn, rowSpan, columnSpan, alignment)
-        
-        #self.setCentralWidget(widget)
-        #generate the help dialogue box, basically will list commands and what they do (pprint docstring more or less)
-    def gdbInputReturnPressed(self):
-        text = self.gdbInput.text()
-        print(text)    
-        self.gdbInput.setText("")
-        self.gdbOutputText.setText(text)
-        # try:
-        #     out = gdb.execute(text,to_string=True)
-        #     self.gdbOutputText.setText(out)
-        # except gdb.error as e:
-        #     self.gdbOutputText.setText(str(e))
-        #     pass
-    def helpButtonClicked(self):
-        dlg = HelpDialogue()
-        dlg.exec()
-    def codeWindowButtonClicked(self):
-        print("Code Window clicked")
-        if self.w1.isVisible():
-            self.w1.hide()
-        else:
-            self.w1.show()
-        
+#the class stack contains all the information about the stack at a given point in the program.
+class Stack:
+    def __init__(self) -> None:
+        #containers that hold register addresses as well as their name (eip, edx, etc.)
+        self.stackRegisterAddresses =  []
+        self.stackRegisterNames = []
+        self.both = [self.stackRegisterNames,self.stackRegisterAddresses]
+        #the start and end locations for stack data
+        self.dataStart = 0
+        self.dataEnd = 0
+        #cdefault register color and default special reg color
+        self.regColor = 'white'
+        self.specialRegColor = 'red'
+        self.boundryColor = 'yellow'
+        #need to do something with this 
+        self.bottomOfStack = "0x00000000"
+        #we have not added anything to the stack on creation 
+        #this should be used to tell if the stack has been initialized for builder mode (probably?) rethere
+        self.stackInit = 0 
+        # if(len(self.stackRegisterAddresses) == 0):
+        #     self.stackInit == 0
+        # else:
+        #     self.stackInit == 1
 
-    def buttonTwoClicked(self):
-        print("button 2 clicked")    
+    #function to add registers to their appropriate container 
+    def addReg(self, regName,regAddress):
+        #print("adding: ",regName, regAddress)
+        self.stackRegisterAddresses.append(regAddress)
+        self.stackRegisterNames.append(regName)
+        self.stackInit = 1
+        self.both.clear()
+        self.both = [self.stackRegisterNames,self.stackRegisterAddresses]
+
+    def getRegisterPairs(self):
+        #if (not self.stackRegisterAddresses):
+        #    print("stack registers empty, getting registers")
+        self.getRegs()
+        boundryList = ["esp", "saved_ebp", "previous_sp"]
+        bigListNames = self.stackRegisterNames
+        bigListAddrs = self.stackRegisterAddresses
+        bigListData = [] 
+        #print("addrs and list getregpairs: ", bigListAddrs,bigListNames)
+        for i in range(len(bigListAddrs)):
+            bigListData.append("")
         
-        if self.w2.isVisible():
-            self.w2.hide()
-        else:
-            self.w2.show()
+        for i in range(len(bigListNames)):
+            print(f"looking at: {bigListNames[i]} in getPair") 
+         #   print(f"bigdata: {i}  {bigListData[i]}")
+        #print(len(bigListData))     
+            if (bigListNames[i] == 'saved_ebx'):
+                    
+                for j in range(len(bigListData)):
+                    if(bigListNames[j] == 'ebx'):
+                        bigListData[i] = 'ebx_'+bigListAddrs[j]
+                        bigListData[j] = 'saved_ebx_'+bigListAddrs[i]
+                        
+                        
+                        break
+
+            if (bigListNames[i] == 'saved_eip'):
+                #bigListColors[i] = 'magenta' 
+                  
+                for j in range(len(bigListData)):
+                    if(bigListNames[j] == 'eip'):
+                        bigListData[i] = 'eip_'+bigListAddrs[j]
+                      
+                        
+                      
+            if( bigListNames[i] == 'previous_sp'  ):
+                #bigListColors[i] = 'magenta'   
+                out = gdb.execute('p $sp',to_string = True)
+                try:
+                    m = re.search('0x\w+',out)
+                    spAddr = m.group(0)
+                    bigListData[i] = "$sp_"+spAddr
+                except:
+                    pass
+        print("returning big list data: ",bigListData)        
+        return bigListData
+    #simple sorting function that sorts the registers by their address.    
+    def sortRegs(self):
+        
+        regaddrs = self.both[1]
+        reglist = self.both[0]
+        
+        for i in range(len(regaddrs)):
+            for j in range(len(regaddrs)):
+                # < should be the correct direction
+                if int(regaddrs[i],16) < int(regaddrs[j],16):
+                # print(f"swapping: {(regaddrs[i])} with {(regaddrs[j])}")
+                    tmpaddrs = regaddrs[i]
+                    regaddrs[i] = regaddrs[j]
+                    regaddrs[j] = tmpaddrs
+                    templist = reglist[i]
+                    reglist[i] = reglist[j]
+                    reglist[j] = templist
+        self.both.clear()
+        self.both = [reglist,regaddrs]
     
-    class WindowTwo(QMainWindow):
+    #prints all stack registers
+    def printAll(self):
+        print("printing stack")
+        regColors =['white'] * len(self.stackRegisterAddresses)        
+        printPair(self.stackRegisterNames,self.stackRegisterAddresses,regColors, "")
+
+    def printPretty(self):
+        print(f"len self.both: {self.both}")
+        names = self.both[0]
+        addrs = self.both[1]
+        print(f"len names: {len(names)} len addrs {len(addrs)}")
+        for i in range(len(names)):
+            print(names[i], "\t",addrs[i])
+    def getRegs(self):
+        
+        print('get regs')
+        try:
+            self.both.clear()
+            self.stackRegisterAddresses.clear()
+            self.stackRegisterNames.clear()
+        #list is already empty so its ok
+        except IndexError:
+            pass
+        
+        registers = gdb.execute('info registers',to_string = True)
+        regsize = 0
+        regs = registers.splitlines()
+        for regline in regs:
+            line = regline.split()
+            name = line[0]
+            addr = line[1]
+        #    print(name, int(addr,16))
+            if(int(addr,16)> int("ffff",16)):
+        #        print(f"{regsize} {line} \n")
+                self.addReg(name,addr)
+                regsize = regsize +1
+        
+        print("before frame info")
+        frameNames, frameRegs = self.getFrameInfo()
+        
+        print("after frame info")
+        #$sp is the same thing as esp
+        # spstring = gdb.execute('x $sp',to_string = True)
+        # print(spstring[:10])
+        # self.addReg("$sp",spstring[:10])
+        for i in range(len(frameNames)):
+            self.addReg(frameNames[i],frameRegs[i])
+        
+        #test print
+        #print(self.stackRegisterAddresses,self.stackRegisterNames)
+        #self.printAll()
+        #print("everything added")
+    #get important info from the current frame    
+
+    def getFrameInfo(self):
+        eip_savedEip_regex = "0x\w+"
+        frameStr = gdb.execute('info frame', to_string = True)
+        if frameStr == "No Stack":
+            return
+        frameArr = frameStr.splitlines()
+        
+        if(0):
+            for i in range(len(frameArr)):
+                print(i, frameArr[i])
+        
+        #0th line
+        # frame level # is used for recursion 
+        m = re.findall(eip_savedEip_regex, frameArr[1])
+        #print(m)
+        frame_eip = m[0]
+        frame_saved_eip = m[1]
+        m = re.findall(eip_savedEip_regex, frameArr[3]) #,4,6
+        frameRegs = []
+        frameRegNames = []
+        try: 
+            m3 = re.search("argv=\w+",frameArr[3])
+            #print("m3group: ", m3.group(0))
+            argv = m3.group(0)[5:]
+           # print("argv: ", argv)
+            frameRegs.append(argv)
+            frameRegNames.append("argv")
+        except:
+            pass
+        arglist = []
+        if m:
+            print(f" arglist m: {m}")
+            arglist = m[0]
+        #print("11-12char: ",frameArr[4][11:12])
+        #if the address is unknown, skip it. 
+        stored_locals = []
+        previous_sp = []
+        #if frameArr[4][11:12] != 'u':
+        m = re.findall(eip_savedEip_regex, frameArr[4]) #,4,6
+        #print(f"previous sp and stored locals {m} {frameArr[4]}")
+        if(len(m)==2):
+            stored_locals = m[0]
+            previous_sp = m[1]
+            print(m)
+        if(len(m)==1):
+            #stored_locals = m[0]
+            previous_sp = m[0]
+            print(m)    
+        #add saved registers to array!
+        m = re.findall(eip_savedEip_regex, frameArr[6]) #,4,6
+        #print(m)
+        m2 = re.findall("e\D\D ",frameArr[6])
+
+        #print(m2)
+        
+        for reg in m:
+            #print(f"adding: {reg}")
+            frameRegs.append(reg)
+        
+        for reg in m2:
+            #print(f"adding name {reg[:-1]}")
+            #[:-1] just to get rid of the space at the end. 
+            frameRegNames.append("saved_"+reg[:-1])
+         
+        #print(frameRegs, frameRegNames)
+        if frame_eip:
+            frameRegs.append(frame_eip)
+            frameRegNames.append("frame_eip")
+        if frame_saved_eip:
+            frameRegs.append(frame_saved_eip)
+            frameRegNames.append("saved_eip")
+        if arglist:
+            frameRegs.append(arglist)
+            frameRegNames.append("arglist")
+        if stored_locals:
+            frameRegs.append(stored_locals)
+            frameRegNames.append("stored_locals")
+        if previous_sp:
+            frameRegs.append(previous_sp)
+            frameRegNames.append("previous_sp")
+        return frameRegNames, frameRegs
+class Func:
+
+    def __init__(self):
+        #containers 
+        self.functionsName = []
+        self.functionsLine = []
+        self.functionsAddr = []
+        self.funcInfo = [self.functionsName,self.functionsLine,self.functionsAddr]
+        #delete later
+        self.app = QApplication(sys.argv)
+        
+
+    #function that retreives all functions from the currently running program
+    def getAllFunctions(self):
+        o = gdb.execute('info functions', to_string = True)
+        s = o.splitlines()
+        #print(s)
+        #regex soup
+        nbs = 'Non-debugging symbols:'
+        ctr = 0
+        getFuncNameRE = ' .*\('
+        getFuncNumberRE = '.*:'
+        for line in s:
+            if line == nbs :
+                #allstring = s[3:ctr]
+                allstring = s[3:ctr-1]
+                break
+            else:
+                ctr=ctr+1    
+        #print(allstring)
+        funcNumbers = []
+        funcNames = []
+        funcAddrs = []
+        for line in allstring:
+            fnumber = re.search(getFuncNumberRE, line).group()
+            #print(fnumber)
+            funcNumbers.append(fnumber[:-1])
+            #print(funcNumbers)
+            fname = re.search(getFuncNameRE,line).group()
+            #print (fname)
+            funcNames.append(fname[1:-1])
+            #print(funcNames)
+        #breakAllFunctionsByName(funcNames)
+        funcAddrs = self.getFuncAddrs(funcNames)
+        #print("func addrs: ",funcAddrs)
+        return funcNames, funcNumbers, funcAddrs
+    
+    #get the function address    
+    def getFuncAddrs(self,funcNames):
+        funcAddrs = []
+        for name in funcNames:
+            out = gdb.execute(f'info address {name}',to_string=True)
+        
+            m = re.search("0x\w+",out)
+            #print("Mgroup: ", m.group(0))
+            funcAddrs.append(m.group(0))
+        #    print(f"name: {name} out: {out}")
+        #print("funcaddrs:", funcAddrs)
+        return funcAddrs
+    #helper function that populates the function class containers.     
+    def populateFunctions(self):
+        self.functionsName, self.functionsLine,  self.functionsAddr = self.getAllFunctions()
+        self.funcInfo = [self.functionsName,self.functionsLine,self.functionsAddr]
+        #print("populated: ", self.functionsName, self.functionsLine,  self.functionsAddr) 
+    
+    #print the information stored in the containes (the line the function is on, its name, and its address)
+    def printAll(self):
+        #convert this into a variable that is easier to understand
+      
+        print("printing functions")
+        names = self.funcInfo[0] 
+        addrs = self.funcInfo[2]
+        nums = self.funcInfo[1]
+        #for now
+        #print(self.funcInfo)
+        #print("masterful test print (lol right)")
+        #print(names, addrs)
+        const = 15
+        print("---------------------------")
+        print("line:function    address")
+        print("---------------------------")
+        for i in range(len(names)):
+            #print(f"{names[i]}{' '.ljust(10)}{addrs[i]}")
+            nameSize = len(names[i])
+            numberSize = len(nums[i])
+            spaceString = " "
+            for j in range(const-(nameSize+numberSize)):
+                spaceString = spaceString + " "
+            print(f"{nums[i]}:{names[i]}{spaceString}{addrs[i]}")
+class Variables:
+    def __init__(self):  
+        #containers
+        self.varNames = []
+        self.varAddrs = []
+        self.varDatas = []
+        self.variableInfo = [self.varNames,self.varAddrs,self.varDatas]
+    def updateVariableInfo(self):
+        self.variableInfo = [self.varNames,self.varAddrs,self.varDatas]
+    #sorting variables by their address 
+    def sort(self):
+        #print('sorting')
+        #print(self.varAddrs)
+        regaddrs = self.varAddrs
+        reglist = self.varNames
+        datas = self.varDatas
+        for i in range(len(regaddrs)):
+            for j in range(len(regaddrs)):
+                # < should be the correct direction
+                if int(regaddrs[i],16) < int(regaddrs[j],16):
+                # print(f"swapping: {(regaddrs[i])} with {(regaddrs[j])}")
+                    tmpaddrs = regaddrs[i]
+                    regaddrs[i] = regaddrs[j]
+                    regaddrs[j] = tmpaddrs
+                    templist = reglist[i]
+                    reglist[i] = reglist[j]
+                    reglist[j] = templist
+                    tempdata = datas[i]
+                    datas[i] = datas[j]
+                    datas[j] = tempdata
+        
+    #print the variables and their information    
+    def printAll(self):
+        print("printing variables")
+        const = 10
+        spacestring2 = "     "
+        print("name         address      data")
+        for i in range(len(self.varNames)):
+            spaceString = " "
+            nameSize = len(self.varNames[i])
+            for j in range(const-nameSize):
+                spaceString = spaceString + " "
+            #print(self.varNames[i], self.varAddrs[i], self.varDatas[i])
+            print(f"{self.varNames[i]}{spaceString}{self.varAddrs[i]}{spacestring2}{self.varDatas[i]}")
+    #<<TODO>>    
+    def getVariableType(varstring):
+        #if(varString ==)
+        pass
+    #function obtains all variable names, addresses, and data in the current frame
+    #in addition to all variables that the running program might use. 
+    #this will gather whatever information is there, garbage or not. Overflow or not. 
+    #this is intended behavior. 
+    def getGlobalVariables(self):
+        print("getGlobalVariables")
+        out = gdb.execute('info variables', to_string = True)
+        globalVarRegex = "\w+;$"
+        lines = out.splitlines()
+        globalvarnames = []
+        #variable names
+        for line in lines:
+        #print(line)
+            try:
+                m = re.search(globalVarRegex,line)
+            #    print(m.group(0))
+                globalvarnames.append(m.group(0))
+                self.varNames.append(m.group(0))
+            except:
+                pass
+        #m = re.findall(globalVarRegex,out)
+        m = re.search(globalVarRegex,out)
+        print(m.group(0))
+        for var in m:
+            print(var[-1:])
+    def getLocalVariables(self):
+        self.varNames.clear()
+        self.varAddrs.clear()
+        self.varDatas.clear()
+        #self.getGlobalVariables()
+        #variable names are the first grouping of "words" at the beginning 
+        out = gdb.execute('info locals', to_string = True)
+        out2 = gdb.execute('info variables', to_string = True)
+        globalVarRegex = "\w+;$"
+        localVariableNames = []
+        localVarAddresses = []
+        variableRegex = "^\w+"
+        lines = out.splitlines()
+        #variable names
+        for line in lines:
+        #print(line)
+            try:
+                m = re.search(variableRegex,line)
+                localVariableNames.append(m.group(0))
+                self.varNames.append(m.group(0))
+            except:
+                pass
+        lines = out2.splitlines()    
+        for line in lines:
+        #print(line)
+            try:
+                m = re.search(globalVarRegex,line)
+                print(m.group(0)[:-1])
+                localVariableNames.append(m.group(0)[:-1])
+                self.varNames.append(m.group(0)[:-1])
+                
+            except:
+                pass
+            #print(variableNames)
+        for var in localVariableNames:
+            out = gdb.execute(f"print &{var}",to_string = True)
+            m = re.search('0x\w+',out)
+            v = m.group(0)
+            localVarAddresses.append(v)
+            self.varAddrs.append(v)
+            
+        for var in localVariableNames:
+            #try and read the data value of the variable, if it cant set to null
+            #null means the varaible has not been instanciated yet, most likely because the program just started
+            try:
+                #variable type with whatis
+                #out = gdb.execute(f"whatis {var}",to_string = True)
+                #self.getVariableType()
+                #print(f"{var}: {out}")
+                out = gdb.execute(f"print {var}",to_string = True)
+                o = out.split()
+                #o = o.replace("'",'')
+                #print(f"{var}: {out} o:{o} len: {len(o)}")
+                datast = ""
+                if(len(o)>3):
+                    #remove ' and " characters
+                    d1 = o[3].strip('\"')
+                    datast =d1.replace("'",'')
+                    print("this is a character")
+                 #   print(print(f"{var}: {o[3][0]}"))
+                else:
+                    #remove ' and " characters
+                    d1 = o[2].strip('\"')
+                    if(not myProgram.window.gdbWindow.isVisible()):
+                        datast =d1.replace("'",'')
+               #dont add data that has has not been initialized yet. 
+                print(f"datast: {datast}")
+                if(datast=='<error:'):
+                    self.varDatas.append('null')    
+                #<incomplete questionable <<TODO>>
+                # if(datast=='<incomplete'):
+                #     self.varDatas.append('memory')        
+                #print(f"the datast for {var}: {datast} 0th_char: {datast[0]}")  
+                else: 
+                    self.varDatas.append(datast)
+            except gdb.MemoryError:
+                #print("some memerror, ignoring")
+                self.varDatas.append('null')
+        #dont need to return...?
+        return localVariableNames, localVarAddresses
+
+    #this will gather all of the variables for the entire program, but not the data.
+    def gatherAllVariables():
+        
+        allVariableNames = []
+        allVariableAddresses = []
+
+            #for each function get its variables
+        for i in range(len(funcNames)):
+            try:
+                localVariableNames = []
+                localVarAddresses = []
+                localVariableNames, localVarAddresses = self.getLocalVariables()
+                #print(allVariableNames, allVariableAddresses)
+                #append local variables to all variables
+                for i in range(len(localVariableNames)):
+                    allVariableAddresses.append(localVarAddresses[i])
+                    allVariableNames.append(localVariableNames[i])
+                    #print(localVariableNames[i], localVarAddresses[i] )
+
+                gdb.execute('c')
+            except:
+                pass
+        return allVariableNames, allVariableAddresses
+    #print all of the variable names along with their addresses
+    def printAllVars(self):
+        allVariableNames = self.varNames
+        allVariableAddresses = self.varAddrs
+        for i in range(len(allVariableNames)):
+            print( allVariableNames[i], allVariableAddresses[i])
+    
+    #update the location of the variable on the stack regardless of whether or not it has actually moved. 
+    def updateVariables(allVariableNames,allVariableAddresses):
+        #for var in allVariableNames:
+        for i in range(len(allVariableNames)):
+            var = allVariableNames[i]
+            try:
+            # print({var})
+                out = gdb.execute(f"print &{var}",to_string = True)
+                #print(out)
+                #either -11 or -9
+                v = out[-9:].strip()
+            # print(f"v {v}")
+                #this should still be fine, because indicies never change for this array
+                #because i'm going to clobber the updated array every time i use it anyway
+                #bad performance but its fine for right now. 
+                
+        #if variables are missing this is probably why.
+        #performance, yes, stability.... TBD
+                if (allVariableAddresses[i] != v):
+                    print(f"changing {allVariableNames[i]} {allVariableAddresses[i]} to {v}")
+                    allVariableAddresses[i] = v
+
+            except gdb.error:
+                #print(f"{var} not in scope, nothing to do")
+                pass
+        return allVariableNames, allVariableAddresses
+
+class Program:
+
+    def __init__(self):   
+        #programs have a stack, a heap, functions, and variables.
+        self.programStack = Stack()
+        self.programHeap = Heap()
+        self.programFuncs = Func()
+        self.programVariables = Variables()
+        self.app = QApplication(sys.argv)
+        self.window = self.MainWindow()
+        self.codeWindow = self.window.w1
+        
+        
+        #mode the program runs in (should initialze to something)
+        #simple / default are the same thing
+        #self.mode = ""
+        self.mode = "default"
+        #default colors
+        #variables
+        self.varColor = "green"
+        #functions
+        self.funcColor = "blue"
+        #used for stack
+        self.regColor = self.programStack.regColor
+
+        #special registry colors (esp, edi, etc)
+        self.specialRegisterColor = self.programStack.specialRegColor
+        self.defaultColor = "white"
+
+        self.programMode = ""
+        #the executable and filepath of the program.
+        #this is somefile
+        self.executable =""
+        #this is somefile.c
+        self.filepath = ""
+        #PID = getPID()
+        
+        #arrray of functions... 
+        #program's process ID 
+        self.PID = 0
+        
+        self.variableNames = []
+        self.variableAddresses = []
+        self.variableBoth = [self.variableNames,self.variableAddresses]
+        #things from proc/<pid>/stat
+        self.dataStart = 0
+        self.dataEnd = 0
+        self.bottomOfStack = "0x00000000"
+        self.argstart = 0
+        self.argend = 0
+        self.heapexpand = 0
+        self.statHexInfo = []
+        self.statWhatInfo = []
+
+        #from proc/<pid>/maps
+        self.mapHeapBottom = 0 
+        self.mapHeapTop = 0 
+        self.mapStackBottom = 0
+        self.mapStackTop = 0
+        #this might be a bad idea...
+        #sizes [2], [2], [3], [3]
+        self.everything = [ [self.programHeap.heapBoth], [self.programStack.both], [self.programFuncs.functionsAddr], [self.variableBoth]   ]
+        self.trackStacks = []
+        print("__init__")
+        #retrieve the program's PID, filepath, and executable path. 
+        self.getPID()
+        self.filepath = "unknown.c"
+        self.executable = "unknown"
+        self.getProgramFilePath()
+        self.sortedAddrs = [] 
+        self.sortedNames = []
+        self.sortedColors = []
+        self.sortedData = []
+    def addSorted(self, ssortedAddrs, ssortedNames, sortedColors):
+        print(f"insorted: {ssortedAddrs}")
+        for a in ssortedAddrs:
+        
+            self.sortedAddrs.append(a)
+        for n in ssortedNames:
+            self.sortedNames.append(n)
+        self.sortedColors = sortedColors
+  
+    #change the output color.
+    def changeColor(self, color, t):
+        print(f"recieved: {color} {t}")
+        try: 
+            out = "changing " +colored(t,color) + " to " + colored(color,color)
+            
+
+            if(t=="var" or t == 'variable'):
+                self.varColor = color
+            elif(t == 'func' or t== 'function'):
+                self.funcColor = color
+            elif(t == 'reg' or t == 'register'):
+                print("changing registers")
+                self.regColor = color
+                return
+            elif(t == 's' or t== 'specialreg'):
+                self.specialRegisterColor = color
+            else:
+                print(f"invalid input: {t}")
+            
+        except KeyError:
+            print(f"invalid color option {color}")
+            
+        print(out)
+    #get the program filepath
+    def getProgramFilePath(self):
+        line = gdb.execute('info file', to_string = True)
+        fpre = "`\/home\/.+'"
+        try:
+            m = re.search(fpre,line)
+            self.filepath = m.group(0)[1:-1]
+            self.executable = self.filepath
+            self.filepath = self.filepath+".c"
+        except:
+            self.filepath = "unknown.c"
+            self.executable = "unknown"
+            pass
+            
+        localfilepath = self.executable
+        try:
+            m = re.search("\w+$",localfilepath)
+            localfilepath = m.group(0)
+            
+        except:
+            localfilepath = "unknown.c"
+            pass
+        if(self.filepath == "unknown.c" or localfilepath == "unknown.c"):
+            print("cannot parse this file, is it named correctly?")  
+            return  
+        self.localexecutable = localfilepath
+        self.localfilepath = localfilepath+".c"
+        print(self.filepath) 
+        
+    #get the running program's process ID
+    #this starts debugging leaving it on the first line of main. 
+    def getPID(self):
+        gdb.execute('b main')
+        gdb.execute('r')
+        out = gdb.execute('info proc files',to_string = True)
+        print(out[8:-1])
+        pid = out[8:-1]
+        self.PID = pid
+    #<<TODO>> sort all of these things (maybe just use sorthebiglist or something)    
+    def sortAll(self):
+        #sort these methods
+        self.everything = [ [self.programHeap.heapBoth], [self.programStack.both], [self.programFuncs.functionsAddr], [self.variableBoth]   ]
+
+    #retrieve things from /proc/$PID/stat
+    def getThingsFromStat(self):
+        
+        procnospace = isGDBRunningpy()
+        if(not procnospace):
+            print("gdb is not running, please run before using this function")
+            return
+        useful_stack_info = [23,26,27,28,29,30,45,46,47,48,49,50,51,52]
+        whatInfo = ["vsize","startcode","endcode", "startStack", "currentESP", "currentEIP", "startData", "endData", "heapExpand", "argStart", "argEnd", "EnvStart", "EnvEnd", "ExitCode"]
+        info = []
+        hexinfo = []
+        command1 = f"cat /proc/{procnospace}/stat | awk "
+        command2 = "\' {print "
+        #initialize to #26 for no reason
+        command3 = f"${useful_stack_info[1]}"    
+        command4 = " } \' "
+        command_out = command1 + command2 +command3 +command4 
+        #print(command_out)
+        for location in useful_stack_info:
+            command3 = f"${location}" 
+            command_out = command1 + command2 +command3 +command4 
+            statout = ( (os.popen(f"{command_out}").read()).strip('\n') )
+            info.append(statout)
+            h = hex(int(statout))
+            hexinfo.append(h)
+        
+        #or i in range(len(whatInfo)):
+         #   print(f"{i} {whatInfo[i]} {info[i]} {hexinfo[i]}")
+        self.bottomOfStack = hexinfo[3]
+        self.dataStart = hexinfo[6]
+        self.dataEnd = hexinfo[7]
+        self.heapexpand = hexinfo[8]
+        self.argstart = hexinfo[9]
+        self.argend = hexinfo[10]
+        
+        #print(self.bottomOfStack,self.dataStart, self.dataEnd, self.heapexpand, self.argstart,self.argend)
+        self.statHexInfo = hexinfo 
+        self.statWhatInfo = whatInfo
+        #return whatInfo, hexinfo
+        #print(f"info: {info}")
+    #print information from that file in a better format so we can read it. 
+    def printStatInfo(self):
+        for i in range(len(self.statHexInfo)):
+            print(f"{i} {self.statWhatInfo[i]} {self.statHexInfo[i]}")
+
+    #find the range of the program's stack and heap, if heap is being used. 
+    def getStackHeapRangeFromMaps(self):
+        PID = isGDBRunningpy()
+        if(not PID):
+            print("gdb is not running, please run before using this function")
+            return
+        mapString= os.popen(f'cat /proc/{PID}/maps').read()
+        heap_stack_regex = ".+\[heap\]|.+\[stack\]"
+        arr = mapString.splitlines()
+        heapStart = ""
+        heapEnd = ""
+        stackStart = ""
+        stackEnd = ""
+        for line in arr:
+            m = re.search(heap_stack_regex,line)
+            if(type(m) == re.Match):
+                #print(type(m))
+                #print(line)
+                #avoid problems with grouping nonetype
+                try:
+                    heapOrStack= m.group(0)
+                #    print(f"last chars: {heapOrStack[-3:]}")
+                #    print(f"mgroups0: {m.group(0)}")
+                    if(heapOrStack[-3:] =="ap]"):
+                        #print("this is a heap")
+                        heapStart = '0x'+heapOrStack[:8]
+                        heapEnd = '0x'+heapOrStack[9:18]
+                        #print(f"heapstart: {heapOrStack[:8]}")
+                    #   print(f"heapend: {heapOrStack[9:18]}")
+                    else:
+                        stackStart = '0x'+heapOrStack[:8]
+                        stackEnd = '0x'+heapOrStack[9:18]
+                    #    print(f"stack: {heapOrStack[:8]}")
+                    #    print(f"stackend: {heapOrStack[9:18]}")
+                        #print("this is a stack")
+                #these contain no errors we're looking for    
+                except:
+                    pass
+        if(not myProgram.window.isVisible()):
+            print(f"heap: {heapStart} to {heapEnd}\nstack: {stackStart} to {stackEnd}")
+        #return heapStart, heapEnd, stackStart, stackEnd
+        self.mapStackBottom = stackEnd
+        self.mapStackTop = stackStart
+        self.mapHeapBottom = heapEnd
+        self.mapHeapTop = heapStart
+    def printStackHeapRange(self):
+        print(f'heap: {self.mapHeapTop} - {self.mapHeapBottom}')
+        print(f'stack: {self.mapStackTop} - {self.mapStackBottom}')
+        print(f'fromstat: stackbottom: {self.bottomOfStack}')
+
+    class MainWindow(QMainWindow):
 
         def __init__(self):
             super().__init__()
-            self.layout = QGridLayout()
-            label = QLabel("WINDOW Two")
-            label2 = QLabel("WINDOW Two")
-            label3 = QLabel("WINDOW Two")
+            #self.w = WindowOne()
+            
+                #styles ['default', 'emacs', 'friendly', 'friendly_grayscale', 'colorful', 'autumn', 
+                # 'murphy', 'manni', 'material', 'monokai', 'perldoc', 'pastie', 'borland', 'trac', 
+                # 'native', 'fruity', 'bw', 'vim', 'vs', 'tango', 'rrt', 'xcode', 'igor', 
+                # 'paraiso-light', 'paraiso-dark', 'lovelace', 'algol', 'algol_nu', 'arduino', 
+                # 'rainbow_dash', 'abap', 'solarized-dark', 'solarized-light', 'sas', 'stata', 
+                # 'stata-light', 'stata-dark', 'inkpot', 'zenburn', 'gruvbox-dark', 'gruvbox-light', 
+                # 'dracula', 'one-dark', 'lilypond']
+            self.scroll = QScrollArea() 
             self.widget = QWidget()
-            self.widget.setLayout(self.layout)
-            self.scroll = QScrollArea()
-            #Scroll Area Properties
             self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
             self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
             self.scroll.setWidgetResizable(True)
             self.scroll.setWidget(self.widget)
 
             self.setCentralWidget(self.scroll)
-            self.layout.addWidget(label,0,0)
-            self.layout.addWidget(label3,0,3)
-            self.layout.addWidget(label2,0,2)
-            self.layout.addWidget(label,0,1)
+            self.outerLayout = QVBoxLayout()
+            self.buttonsLayout = QHBoxLayout()
+            #self.labelsLayout = QGridLayout() 
+            self.labelsLayout = QVBoxLayout() 
+            self.w1 = CodeWindow()
+            self.w2 = self.WindowTwo()
+            self.setWindowTitle(f"multiple Windows")
+            codeWindowButton = QPushButton("Show/Hide Code Window")
+            button2 = QPushButton("button 2")
+            helpButton =QPushButton("Help")
+            self.gdbInput = QLineEdit()
+            self.gdbInput.returnPressed.connect(self.gdbInputReturnPressed)
+            self.gdbInput.setMaximumWidth(400)
+
+            codeWindowButton.clicked.connect(self.codeWindowButtonClicked)
+            button2.clicked.connect(self.buttonTwoClicked)
+            helpButton.clicked.connect(self.helpButtonClicked)
+
+            self.centralLabel = QLabel("pprogram output will populate here")
+            self.labelsLayout.addWidget(self.centralLabel)
+
+            #set the width of the buttons 
+            codeWindowButton.setMaximumWidth(200)
+            button2.setMaximumWidth(100)
+            helpButton.setMaximumWidth(100)
+
+            align = Qt.AlignmentFlag(0) #align left
+            
+            self.buttonsLayout.addWidget(codeWindowButton,alignment=align)
+            
+            #codeWindowButton.setMaximumWidth(200)
+            
+            self.buttonsLayout.addWidget(button2,alignment=align)
+            self.buttonsLayout.addWidget(helpButton,alignment=align)
+
+            self.outerLayout.addLayout(self.buttonsLayout)
+            self.outerLayout.addLayout(self.labelsLayout)
+            #i dunno about this one 
+            self.outerLayout.addWidget(self.gdbInput)
+            self.gdbOutputText = QLabel("output from gdb commands will populate here.")
+            self.outerLayout.addWidget(self.gdbOutputText)
+            #self.gdbOutputText.setFixedWidth(500)
+            
+            
+            #self.gdbOutputText.setFixedWidth(10)
+            self.widget.setLayout(self.outerLayout)
+            #addWidget(widget, fromRow, fromColumn, rowSpan, columnSpan, alignment)
+            
+            #self.setCentralWidget(widget)
+            #generate the help dialogue box, basically will list commands and what they do (pprint docstring more or less)
+            
+        def changeCentralLabels(self,text):
+            self.centralLabel.setText(text)
+        def gdbInputReturnPressed(self):
+            cw = self.w1
+            cw.setCodeText()
+            cw.setNumberLabels()
+            
+            text = self.gdbInput.text()
+            print(text)    
+            self.gdbInput.setText("")
+            #self.gdbOutputText.setText(text)
+            try:
+                out = gdb.execute(text,to_string=True)
+                self.gdbOutputText.setText(out)
+            except gdb.error as e:
+                self.gdbOutputText.setText(str(e))
+                pass
+        def helpButtonClicked(self):
+            dlg = self.HelpDialogue()
+            dlg.exec()
+        def codeWindowButtonClicked(self):
+            print("Code Window clicked")
+            if self.w1.isVisible():
+                self.w1.hide()
+            else:
+                self.w1.show()
+        
+        def buttonTwoClicked(self):
+            print("button 2 clicked")    
+            
+            if self.w2.isVisible():
+                self.w2.hide()
+            else:
+                self.w2.show()
+            
+        class HelpDialogue(QDialog):
+            def __init__(self, parent=None):
+                super().__init__(parent)
+                self.setWindowTitle("<<TODO> CHANGEME Help Menu!")
+
+                
+
+                QBtn = QDialogButtonBox.StandardButton.Ok 
+
+                self.buttonBox = QDialogButtonBox(QBtn)
+                self.buttonBox.accepted.connect(self.accept)
+                
+                
+                self.layout = QVBoxLayout()
+                message = QLabel("<<TODO>> help menu diag box")
+                
+                self.layout.addWidget(message)
+                self.layout.addWidget(self.buttonBox)
+                
+                self.setLayout(self.layout)
+            def accepted(self):
+                self.close()
+        class CustomDialog(QDialog):
+            def __init__(self, parent=None):
+                super().__init__(parent)
+
+                self.setWindowTitle("<<TODO> CHANGEME!")
+
+                QBtn = QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+
+                self.buttonBox = QDialogButtonBox(QBtn)
+                self.buttonBox.accepted.connect(self.accept)
+                self.buttonBox.rejected.connect(self.reject)
+                
+                self.layout = QVBoxLayout()
+                message = QLabel("Something happened, is that OK?")
+                self.diagInput = QLineEdit("enter filename")
+                self.diagInput.returnPressed.connect(self.accept)
+                
+                self.layout.addWidget(message)
+                self.layout.addWidget(self.buttonBox)
+                self.layout.addWidget(self.diagInput)
+                self.setLayout(self.layout)
+            def accept(self):
+                #this happens twice when pressing enter for some reason
+                text = self.diagInput.text()
+                print(text)
+                #get filename and save the output here 
+            def reject(self):
+                print("rejected")    
+                self.close()
+           
+        class WindowTwo(QMainWindow):
+
+            def __init__(self):
+                super().__init__()
+                self.layout = QGridLayout()
+                label = QLabel("WINDOW Two")
+                label2 = QLabel("WINDOW Two")
+                label3 = QLabel("WINDOW Two")
+                self.widget = QWidget()
+                self.widget.setLayout(self.layout)
+                self.scroll = QScrollArea()
+                #Scroll Area Properties
+                self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
+                self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
+                self.scroll.setWidgetResizable(True)
+                self.scroll.setWidget(self.widget)
+
+                self.setCentralWidget(self.scroll)
+                self.layout.addWidget(label,0,0)
+                self.layout.addWidget(label3,0,3)
+                self.layout.addWidget(label2,0,2)
+                self.layout.addWidget(label,0,1)
+
+class CodeWindow(QMainWindow):
+
+        def __init__(self):
+            super().__init__()
+
+            
+                #styles ['default', 'emacs', 'friendly', 'friendly_grayscale', 'colorful', 'autumn', 
+                # 'murphy', 'manni', 'material', 'monokai', 'perldoc', 'pastie', 'borland', 'trac', 
+                # 'native', 'fruity', 'bw', 'vim', 'vs', 'tango', 'rrt', 'xcode', 'igor', 
+                # 'paraiso-light', 'paraiso-dark', 'lovelace', 'algol', 'algol_nu', 'arduino', 
+                # 'rainbow_dash', 'abap', 'solarized-dark', 'solarized-light', 'sas', 'stata', 
+                # 'stata-light', 'stata-dark', 'inkpot', 'zenburn', 'gruvbox-dark', 'gruvbox-light', 
+                # 'dracula', 'one-dark', 'lilypond']
+            
+            
+            self.getProgramFilePathForWindow()
+            self.setWindowTitle(f"{self.localfilepath} Code Window")
+            self.layout = QGridLayout() 
+            self.label1 = QLabel("")
+            self.label2 = QLabel("")  
+            self.setCodeText()
+            self.setNumberLabels()
+            self.layout.addWidget(self.label1,0,0)
+            self.layout.addWidget(self.label2,0,1)
+        
+            widget = QWidget()
+            widget.setLayout(self.layout)
+            self.setCentralWidget(widget)
+            #print(self.label1.text())
+            #print(self.label2.text())
+        def setCodeText(self):
+            s = 'vs'
+            with open(self.filepath,'r') as f:
+                code = f.read()
+            lexer = CLexer() 
+            
+            formatter = HtmlFormatter(style=s)
+            result = highlight(code, lexer, formatter)
+            #print(result)
+            css = formatter.get_style_defs()
+            text2 = [] 
+            lines = css.splitlines()
+            classesList = []
+            colorsList = []
+            for line in lines:
+        #if i > 5:
+                color = "<font"
+                m = re.split("{|}",line)
+                #print(line)
+                #print(m[0][1:])
+                #print(m[1], m[1][1])
+                if(m[1][1]=='f'):
+                    colorsList.append("")
+                else:
+                    cout = re.sub(': ',"=",m[1])
+                    color = color+ cout[:-1] +">"
+                    colorsList.append(color)
+                classesList.append(m[0][1:])
+                #i = i + 1
+            classesList.append("w")
+            colorsList.append("<font color=#000000>")
+            notFirstRun = False
+            for c,color in zip(classesList,colorsList):
+                if notFirstRun:
+                    result = res3
+                #c = classesList[i]
+                #color = colorsList[i]
+                #print(f"class and color : {c[:-1]}, {color}")    
+                res = re.sub(f"""<span class="{c[:-1]}">""",color,result)
+                res2 = re.sub("</span>","</font>",res)
+                notFirstRun = True
+                #print(res2)
+                #print(i)
+                res3 = res2
+                #res3 = re.sub("""<span class="w"> +<\/font>""","""  """,res2)
+                #res4 = re.sub(f"""<span class="n">""","xxxxxxxxxxx<font>",res3)
+                
+            for line in res3.splitlines():
+                label = QLabel("")
+                label.setText("\n")
+                text2.append(label)
+                #print(line)
+            self.label2.setText(res3)
+            self.numCodeLines = len(res3.splitlines())
+            #self.layout.addWidget(label2,1,1)
+            
+            #print(t)
+            #print(self.label1.text())     
+            #print(bst)
+        def getBreakpoints(self):
+            print("get breakpoints called")
+            breakpointRegex = "\d+$"
+            out = gdb.execute('info breakpoints',to_string = True)
+            lines = out.splitlines()
+            print(out)
+            print(lines)
+            bps = []
+            for line in lines:
+                #print(f"examining {line}")
+                try:
+                    #re.findall()
+                    m = re.search(breakpointRegex,line)
+                #    print("M is:",m.group(0))
+                    bps.append(m.group(0))
+                except:
+                    #print('exception in getBreakPoints')
+                    pass
+                
+                    a = 0
+            #print("all breakpoints ", bps)
+            uniqueBps = [*set(bps)]
+            uniqueBps.sort(key = int)
+            #print("unique bps: ",uniqueBps)
+            #print(f"returning {uniqueBps} from getbreakpoints")
+            return uniqueBps
+
+        #there is a delay in this function have to hit enter twice to update things for some reason    
+        def setNumberLabels(self):
+            print("setting number labels")
+            breaknums = self.getBreakpoints()
+        
+            bst = ""
+            currentLine = self.getCurrentLine()
+            for i in range(self.numCodeLines):
+                match = False
+                for b in breaknums:
+
+                    if(i == int(b) and i == int(currentLine)):
+                    #if(i == 14):
+                        bst = bst + f"B: {i}-->\n"
+                        match = True
+                        break
+                    elif(i == int(currentLine)):
+                        bst = bst+ f"{i}-->\n"
+                        match = True
+                        break
+                    elif(i == int(b)):
+                        bst = bst+ f"B: {i}\n"
+                        match = True
+                        break
+
+                if(match):    
+                    pass
+                else:
+                    bst=bst+f"{i}\n"
+
+            self.label1.setText(bst)   
+            t = self.label1.text()    
+        def getCurrentLine(self):
+            if(gdb.selected_inferior().pid):
+                out = gdb.execute("frame",to_string = True)
+                print(out)
+                lines = out.splitlines()
+                m = re.search("^\d+", lines[1])
+                try:
+                    numString = m.group(0)#[1:-1]
+                    numInt = int(numString)
+                except:
+                    numString = 0
+                    print("error in getCurrentLine")
+                    pass
+            else:
+                numString = 0    
+            return numString
+        def getProgramFilePathForWindow(self):
+            line = gdb.execute('info file', to_string = True)
+            fpre = "`\/home\/.+'"
+            try:
+                m = re.search(fpre,line)
+                self.filepath = m.group(0)[1:-1]
+                self.executable = self.filepath
+                self.filepath = self.filepath+".c"
+            except:
+                self.filepath = "unknown.c"
+                self.executable = "unknown"
+                pass
+                
+            localfilepath = self.executable
+            try:
+                m = re.search("\w+$",localfilepath)
+                localfilepath = m.group(0)
+                
+            except:
+                localfilepath = "unknown.c"
+                pass
+            if(self.filepath == "unknown.c" or localfilepath == "unknown.c"):
+                print("cannot parse this file, is it named correctly?")  
+                return  
+            self.localexecutable = localfilepath
+            self.localfilepath = localfilepath+".c"
+            print(self.filepath)    
 
 #print(result)
 class pwindow (gdb.Command):
@@ -321,10 +1236,9 @@ class pwindow (gdb.Command):
         super(pwindow,self).__init__("pwindow",gdb.COMMAND_USER)
     #this is what happens when they type in the command     
     def invoke(self, arg, from_tty):
-        app = QApplication(sys.argv)
-        window = MainWindow()
-        window.show()
-        app.exec()
+        myProgramWindow.show()
+        myProgram.app.exec()
+        
 pwindow() 
 
 class resource (gdb.Command):
@@ -338,4 +1252,138 @@ class resource (gdb.Command):
 resource() 
 #app.setStyleSheet(css)
 
+class pfunc (gdb.Command):
+    """print the functions known to the program at the current point"""
+    def __init__(self):
+                                 #cmd user types in goeshere
+        super(pfunc,self).__init__("pfunc",gdb.COMMAND_USER)
+    #this is what happens when they type in the command     
+    def invoke(self, arg, from_tty):
+        argString = arg.strip('').split('-')
+        #print(arg)
+        
+        
+        print(f"invoking pfunc {arg} from_tty: {from_tty} isVisible: {myProgramWindow.isVisible()}")    
+        myProgramFunctions.populateFunctions()
+        #myProgramFunctions.functionsName
+        #myProgramFunctions.fun
+        if(from_tty):
+            myProgramFunctions.printAll()
+        #change me <<TODO>> there will be a bug here later
+        if(myProgramWindow.isVisible()):
+            myProgramWindow.changeCentralLabels("from pfunc----------bbbbbbbb")
+
+pfunc()
+
+#redirects pfuncs to pfunc in case of typo.
+#this would cause confusion, so just forward it to pfunc
+class pfuncs (gdb.Command):
+    """calls pfunc"""
+    def __init__(self):
+                                 #cmd user types in goeshere
+        super(pfuncs,self).__init__("pfuncs",gdb.COMMAND_USER)
+    #this is what happens when they type in the command     
+    def invoke(self, arg, from_tty):
+        argString = arg.strip('').split('-')
+        print(f"invoking pfuncs {arg}") 
+        gdb.execute(f'pfunc {arg}')  
+pfuncs()
+
+#####~~~~~MAIN~~~~~#####
+#declare objects so this file can start collecting information
+#define like this for ease of use later
+
+myProgram = Program()
+myProgramStack = myProgram.programStack
+myProgramHeap = myProgram.programHeap
+myProgramFunctions = myProgram.programFuncs
+myProgramVariables = myProgram.programVariables
+myProgramWindow = myProgram.window
+# gdbWindow = myProgramWindow.gdbWindow
+# gdbWindow.getBreakpoints()
+
+#this method prints things nicely. 
+def printPair(names,addrs,colors,data):
+    print("invoking printpair")
+    const = 20
+    print("---------------------------")
+    print("reg/var/func/info    address       what is stored <what is pointing to?>")
+    print("---------------------------")
+    for i in range(len(names)):
+        #print(f"{names[i]}{' '.ljust(10)}{addrs[i]}")
+        nameSize = len(names[i])
+        spaceString = " "
+        for j in range(const-(nameSize)):
+            spaceString = spaceString + " "
+        if(data == ""):
+            if (names[i]== 'saved_eip' or names[i]=='previous_sp'):
+                out = colored(f"{names[i]}{spaceString}{addrs[i]}",colors[i], attrs=['bold'])
+            else:
+                out = colored(f"{names[i]}{spaceString}{addrs[i]}",colors[i])
+        else:
+            out = colored(f"{names[i]}{spaceString}{addrs[i]}     {data[i]}",colors[i])
+        print(out)
+
+def printPairNoColor(names,addrs,data):
+    print("print pair no color invoked")
+    const = 20
+    print("---------------------------")
+    print("reg/var/func/info    address       what is stored")
+    print("---------------------------")
+    for i in range(len(names)):
+        #print(f"{names[i]}{' '.ljust(10)}{addrs[i]}")
+        nameSize = len(names[i])
+        spaceString = " "
+        for j in range(const-(nameSize)):
+            spaceString = spaceString + " "
+        if(data == ""):
+            if (names[i]== 'saved_eip' or names[i]=='previous_sp'):
+                out = names[i]+spaceString+addrs[i]
+            else:
+                out = names[i]+spaceString+addrs[i]
+        else:
+            out = names[i]+spaceString+addrs[i]+"     "+data[i]
+        print(out)
+
+#sorts the big list of the stack/heap/registers, basically whatever you give it .
+#if effeciency becomes a concern, revisit this function and use a better sorting alg. 
+#Merge Sort is one that is tempting to use based on the nature of this program. 
+def sortTheBigList(reglist, regaddrs,colors, data):
+    #regaddrs = self.registerAddresses 
+    #reglist = self.registerNames
+    
+    #dont bother sorting if the length is only 1. 
+    #does it even count as an optimization 
+    # if its only ever called once?
+    if(len(regaddrs)==1):
+        pass
+    else:
+        
+        for i in range(len(regaddrs)):
+            for j in range(len(regaddrs)):
+                # < should be the correct direction
+                if int(regaddrs[i],16) < int(regaddrs[j],16):
+                # print(f"swapping: {(regaddrs[i])} with {(regaddrs[j])}")
+                    tmpaddrs = regaddrs[i]
+                    regaddrs[i] = regaddrs[j]
+                    regaddrs[j] = tmpaddrs
+                    templist = reglist[i]
+                    reglist[i] = reglist[j]
+                    reglist[j] = templist
+                    tmpcolor = colors[i] 
+                    colors[i] = colors[j]
+                    colors[j] = tmpcolor
+                    tmpdata = data[i]
+                    data[i] = data[j]
+                    data[j] = tmpdata
+    return reglist, regaddrs, colors, data
+def isGDBRunningpy():
+        pid =  (gdb.selected_inferior().pid)
+        if(pid<=0):
+            print("i am not running")
+            return 0
+        else:
+            if(not myProgram.window.isVisible()):
+                print(f"i am running, my pid is: {pid}")
+            return pid
 
