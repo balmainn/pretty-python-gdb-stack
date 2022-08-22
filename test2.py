@@ -182,20 +182,17 @@ class MainWindow(QMainWindow):
                 #print(f"setting {i} {j} to {fullList[i][j]}")
     def setNumLabels(self,num_needed):
 
-        print("adding label?")
-        inputText = "line1\nline2\n"
-        #num_needed = len(inputText.splitlines())
-        #num_needed = 21
         numberCurrentLabels = self.labelsLayout.count()
+        #remove all labels
         for i in reversed(range(numberCurrentLabels)):
             item = self.labelsLayout.itemAt(i)
-        #    print("closing: ",i)
             item.widget().close()
             self.labelsLayout.removeItem(item)
+        #now put back only the ones we need. 
         for i in range(num_needed):
             label = QLabel(f"new label{i}")
             self.labelsLayout.addWidget(label)
-         #   print("adding: ",i)
+         
         
     def removeLabel(self):
         print("removing label")
