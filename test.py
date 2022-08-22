@@ -391,6 +391,7 @@ class Func:
         print("---------------------------")
         print("line:function    address")
         print("---------------------------")
+        optionalRetString = []
         for i in range(len(names)):
             #print(f"{names[i]}{' '.ljust(10)}{addrs[i]}")
             nameSize = len(names[i])
@@ -398,7 +399,58 @@ class Func:
             spaceString = " "
             for j in range(const-(nameSize+numberSize)):
                 spaceString = spaceString + " "
-            print(f"{nums[i]}:{names[i]}{spaceString}{addrs[i]}")
+            outst = f"{nums[i]}:{names[i]}{spaceString}{addrs[i]}"    
+            print(outst)
+            optionalRetString.append(outst)
+        return optionalRetString
+    def funcSortByNumber(self):
+        names = self.functionsName
+        lines = self.functionsLine
+        addrs = self.functionsAddr
+        if len(lines)<2:
+            print("only one function nothing to do.")
+            return
+        #print("before sorting:", lines)
+        for i in range(len(names)):
+            for j in range(len(names)):
+                if(int(lines[i])< int(lines[j])):
+                    
+                    temp = lines[i]
+                    lines[i] = lines[j]
+                    lines[j] = temp
+
+                    temp = names[i]
+                    names[i] = names[j]
+                    names[j] = temp
+
+                    temp = addrs[i]
+                    addrs[i] = addrs[j]
+                    addrs[j] = temp
+        #print("after sorting:",lines)  
+    def funcSortByNameLength(self):
+        names = self.functionsName
+        lines = self.functionsLine
+        addrs = self.functionsAddr
+        if len(lines)<2:
+            print("only one function nothing to do.")
+            return
+        #print("before sorting:", lines)
+        for i in range(len(names)):
+            for j in range(len(names)):
+                if(len(names[i])< len(names[j])):
+                    
+                    temp = lines[i]
+                    lines[i] = lines[j]
+                    lines[j] = temp
+
+                    temp = names[i]
+                    names[i] = names[j]
+                    names[j] = temp
+
+                    temp = addrs[i]
+                    addrs[i] = addrs[j]
+                    addrs[j] = temp
+        #print("after sorting:",lines)            
 class Variables:
     def __init__(self):  
         #containers
@@ -609,6 +661,58 @@ class Variables:
                 #print(f"{var} not in scope, nothing to do")
                 pass
         return allVariableNames, allVariableAddresses
+#gdb command for printing all variables       
+class pvars (gdb.Command):
+    """find and print the variables known at the current point"""
+    def __init__(self):
+                                 #cmd user types in goeshere
+        super(pvars,self).__init__("pvars",gdb.COMMAND_USER)
+    #this is what happens when they type in the command     
+    def invoke(self, arg, from_tty):
+        if(isGDBRunningpy()):
+            #if(not myProgram.window.isVisible()):
+            print("invoking pvars")
+            myProgramVariables.getLocalVariables()
+            
+            if(from_tty):
+                if(not myProgram.window.isVisible()):
+                    myProgramVariables.printAll()
+            #this may need to be elif later or need to double check from_tty
+            else:
+                    print("updating gdb window pvars")
+                    #print(myProgramVariables.variableInfo)
+                    #myProgramVariables.updateVariableInfo()
+                    #print(myProgramVariables.variableInfo)
+                    colors = []
+                    for i in range(len(myProgramVariables.varNames)):
+                        colors.append("blue")
+
+                    lst = [myProgramVariables.varNames,myProgramVariables.varAddrs,myProgramVariables.varDatas]
+                    #lst = [myProgramVariables.varNames,myProgramVariables.varAddrs,myProgramVariables.varDatas,colors]
+                    myProgramWindow.changeCentralLabels(lst)
+                    #gdbWindow.updateGDBLabelText([myProgramVariables.varNames,myProgramVariables.varAddrs,myProgramVariables.varDatas])
+            #myProgramVariables.sort()
+            #myProgramVariables.printAll()
+        else:
+            print("not debugging, please run before using.")
+pvars() 
+
+def pvartest(input,givenColors=0):
+    print("pvartest")
+    if(givenColors):
+        pass
+    else:
+        zlist = list(zip(*input))
+        for i in range(len(zlist)):
+            out = ""
+            for componant in zlist[i]:
+                out = out + componant +" "
+        #print(zlist)
+            print(out)
+            #self.centralLabels.setText(out)
+        pass
+    
+    #print(input)
 
 class Program:
 
@@ -877,8 +981,9 @@ class Program:
             self.setCentralWidget(self.scroll)
             self.outerLayout = QVBoxLayout()
             self.buttonsLayout = QHBoxLayout()
-            #self.labelsLayout = QGridLayout() 
-            self.labelsLayout = QVBoxLayout() 
+            self.labelsLayout = QGridLayout() 
+            self.gdbOutputLayout = QVBoxLayout()
+            #self.labelsLayout = QVBoxLayout() 
             self.w1 = CodeWindow()
             self.w2 = self.WindowTwo()
             self.setWindowTitle(f"multiple Windows")
@@ -894,7 +999,19 @@ class Program:
             helpButton.clicked.connect(self.helpButtonClicked)
 
             self.centralLabel = QLabel("pprogram output will populate here")
-            self.labelsLayout.addWidget(self.centralLabel)
+            blanklabel1 = QLabel("")
+            blanklabel2 = QLabel("")
+            #add 9 temporary labels to the gird layout
+            self.labelsLayout.addWidget(self.centralLabel,0,0)
+            self.labelsLayout.addWidget(blanklabel1,0,1)
+            self.labelsLayout.addWidget(blanklabel2,0,2)
+            for i in range(6):
+                testLabel = QLabel(f"")
+                testLabel2 = QLabel(f"")
+                testLabel3 = QLabel(f"")
+                self.labelsLayout.addWidget(testLabel,i,0)
+                self.labelsLayout.addWidget(testLabel2,i,1)
+                self.labelsLayout.addWidget(testLabel3,i,2)
 
             #set the width of the buttons 
             codeWindowButton.setMaximumWidth(200)
@@ -911,11 +1028,13 @@ class Program:
             self.buttonsLayout.addWidget(helpButton,alignment=align)
 
             self.outerLayout.addLayout(self.buttonsLayout)
+            self.outerLayout.addWidget(self.gdbInput)
             self.outerLayout.addLayout(self.labelsLayout)
             #i dunno about this one 
-            self.outerLayout.addWidget(self.gdbInput)
+            
             self.gdbOutputText = QLabel("output from gdb commands will populate here.")
-            self.outerLayout.addWidget(self.gdbOutputText)
+            self.gdbOutputLayout.addWidget(self.gdbOutputText)
+            self.outerLayout.addLayout(self.gdbOutputLayout)
             #self.gdbOutputText.setFixedWidth(500)
             
             
@@ -926,12 +1045,42 @@ class Program:
             #self.setCentralWidget(widget)
             #generate the help dialogue box, basically will list commands and what they do (pprint docstring more or less)
             
-        def changeCentralLabels(self,text):
-            self.centralLabel.setText(text)
+        def changeCentralLabels(self,text,givenColors=0):
+            
+            zlist= list(zip(*text))
+            #i think this one works. double check math later
+            num_needed=len(text[0])*3
+            print(f"i should need:{num_needed} l-zlist: {len(zlist[0])}")
+            if(givenColors):
+                num_needed=len(text[0])*3
+                self.setNumLabels(num_needed)
+            else:
+                num_needed=len(text[0])*3
+                self.setNumLabels(num_needed)
+                count = 0
+                print(f"i should need:{num_needed} l-zlist: {len(zlist)}")
+                for i in range(len(zlist)):
+                    for j in range(len(zlist[i])):
+                        itemWidget = self.labelsLayout.itemAt(count).widget()
+                        itemWidget.setText(zlist[i][j])
+                        count=count+1    
+            
+        def setNumLabels(self,num_needed):
+
+            numberCurrentLabels = self.labelsLayout.count()
+            #remove all labels
+            for i in reversed(range(numberCurrentLabels)):
+                item = self.labelsLayout.itemAt(i)
+                item.widget().close()
+                self.labelsLayout.removeItem(item)
+            #now put back only the ones we need. 
+            for i in range(num_needed):
+                label = QLabel(f"new label{i}")
+                self.labelsLayout.addWidget(label)        
+            
         def gdbInputReturnPressed(self):
             cw = self.w1
-            cw.setCodeText()
-            cw.setNumberLabels()
+            
             
             text = self.gdbInput.text()
             print(text)    
@@ -939,10 +1088,13 @@ class Program:
             #self.gdbOutputText.setText(text)
             try:
                 out = gdb.execute(text,to_string=True)
+                #gdb.execute(text,to_string=True)
                 self.gdbOutputText.setText(out)
             except gdb.error as e:
                 self.gdbOutputText.setText(str(e))
                 pass
+            cw.setCodeText()
+            cw.setNumberLabels()
         def helpButtonClicked(self):
             dlg = self.HelpDialogue()
             dlg.exec()
@@ -1241,17 +1393,6 @@ class pwindow (gdb.Command):
         
 pwindow() 
 
-class resource (gdb.Command):
-    """reload this file, with changes"""
-    def __init__(self):
-                                 #cmd user types in goeshere
-        super(resource,self).__init__("rs",gdb.COMMAND_USER)
-    #this is what happens when they type in the command     
-    def invoke(self, arg, from_tty):
-        gdb.execute("source test.py")
-resource() 
-#app.setStyleSheet(css)
-
 class pfunc (gdb.Command):
     """print the functions known to the program at the current point"""
     def __init__(self):
@@ -1265,13 +1406,23 @@ class pfunc (gdb.Command):
         
         print(f"invoking pfunc {arg} from_tty: {from_tty} isVisible: {myProgramWindow.isVisible()}")    
         myProgramFunctions.populateFunctions()
+        print("myproginfo: ",myProgramFunctions.funcInfo)
         #myProgramFunctions.functionsName
         #myProgramFunctions.fun
         if(from_tty):
             myProgramFunctions.printAll()
-        #change me <<TODO>> there will be a bug here later
+
+            
+        #justification is not easy. punt for later its a small issue. 
         if(myProgramWindow.isVisible()):
-            myProgramWindow.changeCentralLabels("from pfunc----------bbbbbbbb")
+                    
+            myProgramFunctions.funcSortByNumber()
+            outst=myProgramFunctions.printAll()
+            printme = ""
+            for o in outst:
+                printme=printme+o+"\n"
+            myProgramWindow.centralLabel.setText(printme)
+            #print(printme)
 
 pfunc()
 
@@ -1292,13 +1443,27 @@ pfuncs()
 #####~~~~~MAIN~~~~~#####
 #declare objects so this file can start collecting information
 #define like this for ease of use later
-
+global myProgram
 myProgram = Program()
 myProgramStack = myProgram.programStack
 myProgramHeap = myProgram.programHeap
 myProgramFunctions = myProgram.programFuncs
 myProgramVariables = myProgram.programVariables
 myProgramWindow = myProgram.window
+
+
+class resource (gdb.Command):
+    """reload this file, with changes"""
+    def __init__(self):
+                                 #cmd user types in goeshere
+        super(resource,self).__init__("rs",gdb.COMMAND_USER)
+    #this is what happens when they type in the command     
+    def invoke(self, arg, from_tty):
+        
+        gdb.execute("source test.py")
+resource() 
+#app.setStyleSheet(css)
+
 # gdbWindow = myProgramWindow.gdbWindow
 # gdbWindow.getBreakpoints()
 
