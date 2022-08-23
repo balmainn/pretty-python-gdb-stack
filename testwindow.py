@@ -19,9 +19,14 @@ class Window(QWidget):
         button1 = QPushButton("button 1")
         button2 = QPushButton("button 2")
         button3 = QPushButton("button 3")
+        button1.setMaximumWidth(100)
+        button2.setMaximumWidth(100)
+        button3.setMaximumWidth(100)
+        blankLabel = QLabel("")
         buttonsLayout.addWidget(button1)
         buttonsLayout.addWidget(button2)
         buttonsLayout.addWidget(button3)
+        buttonsLayout.addWidget(blankLabel)
         # Create a layout for the checkboxes
         optionsLayout = QVBoxLayout()
         # Add some checkboxes to the layout

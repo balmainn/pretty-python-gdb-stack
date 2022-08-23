@@ -1,5 +1,6 @@
 #<<TODO>>need to add an on_exit button that asks if they want to quit gdb if the window is up. 
 
+from termios import TIOCM_ST
 from pygments import highlight
 from pygments.style import Style
 from pygments.token import *
@@ -587,7 +588,7 @@ class Variables:
                 else:
                     #remove ' and " characters
                     d1 = o[2].strip('\"')
-                    if(not myProgram.window.gdbWindow.isVisible()):
+                    if(not myProgram.window.w1.isVisible()):
                         datast =d1.replace("'",'')
                #dont add data that has has not been initialized yet. 
                 print(f"datast: {datast}")
@@ -870,8 +871,11 @@ class Program:
         if(not procnospace):
             print("gdb is not running, please run before using this function")
             return
-        useful_stack_info = [23,26,27,28,29,30,45,46,47,48,49,50,51,52]
-        whatInfo = ["vsize","startcode","endcode", "startStack", "currentESP", "currentEIP", "startData", "endData", "heapExpand", "argStart", "argEnd", "EnvStart", "EnvEnd", "ExitCode"]
+        #original information 
+        #useful_stack_info = [23,26,27,28,29,30,45,46,47,48,49,50,51,52]
+        #whatInfo = ["vsize","startcode","endcode", "startStack", "currentESP", "currentEIP", "startData", "endData", "heapExpand", "argStart", "argEnd", "EnvStart", "EnvEnd", "ExitCode"]
+        useful_stack_info = [23,26,        27,           28,         45,        46,         47,         48,         49,           50,      51,       52]
+        whatInfo = ["vsize","startcode","endcode", "startStack", "startData", "endData", "heapExpand", "argStart", "argEnd", "EnvStart", "EnvEnd", "ExitCode"]
         info = []
         hexinfo = []
         command1 = f"cat /proc/{procnospace}/stat | awk "
@@ -889,22 +893,37 @@ class Program:
             h = hex(int(statout))
             hexinfo.append(h)
         
+        
         #or i in range(len(whatInfo)):
          #   print(f"{i} {whatInfo[i]} {info[i]} {hexinfo[i]}")
         self.bottomOfStack = hexinfo[3]
-        self.dataStart = hexinfo[6]
-        self.dataEnd = hexinfo[7]
-        self.heapexpand = hexinfo[8]
-        self.argstart = hexinfo[9]
-        self.argend = hexinfo[10]
-        
+        self.dataStart = hexinfo[4]
+        self.dataEnd = hexinfo[5]
+        self.heapexpand = hexinfo[6]
+        self.argstart = hexinfo[7]
+        self.argend = hexinfo[8]
+        out = gdb.execute('p $esp', to_string=True)
+        m = re.search("0x\w+",out)
+        espAddr = m.group(0)
+        out = gdb.execute('p $eip', to_string=True)
+        m = re.search("0x\w+",out)
+        eipAddr = m.group(0)
+        hexinfo.append(eipAddr)
+        hexinfo.append(espAddr)
+        newInfo = []
+        for w in whatInfo:
+            newInfo.append(w)
+        newInfo.append("currentEIP")
+        newInfo.append("currentESP")
         #print(self.bottomOfStack,self.dataStart, self.dataEnd, self.heapexpand, self.argstart,self.argend)
         self.statHexInfo = hexinfo 
-        self.statWhatInfo = whatInfo
+        self.statWhatInfo = newInfo
         #return whatInfo, hexinfo
         #print(f"info: {info}")
     #print information from that file in a better format so we can read it. 
     def printStatInfo(self):
+        print("print stat")
+        print( len(self.statWhatInfo),len(self.statHexInfo))
         for i in range(len(self.statHexInfo)):
             print(f"{i} {self.statWhatInfo[i]} {self.statHexInfo[i]}")
 
@@ -1001,22 +1020,28 @@ class Program:
             self.centralLabel = QLabel("pprogram output will populate here")
             blanklabel1 = QLabel("")
             blanklabel2 = QLabel("")
+            blanklabel3 = QLabel("")
             #add 9 temporary labels to the gird layout
             self.labelsLayout.addWidget(self.centralLabel,0,0)
             self.labelsLayout.addWidget(blanklabel1,0,1)
             self.labelsLayout.addWidget(blanklabel2,0,2)
+            self.labelsLayout.addWidget(blanklabel3,0,3)
             for i in range(6):
                 testLabel = QLabel(f"")
                 testLabel2 = QLabel(f"")
                 testLabel3 = QLabel(f"")
+                testLabel4 = QLabel(f"")
                 self.labelsLayout.addWidget(testLabel,i,0)
                 self.labelsLayout.addWidget(testLabel2,i,1)
                 self.labelsLayout.addWidget(testLabel3,i,2)
+                self.labelsLayout.addWidget(testLabel4,i,3)
 
             #set the width of the buttons 
             codeWindowButton.setMaximumWidth(200)
             button2.setMaximumWidth(100)
             helpButton.setMaximumWidth(100)
+            
+            
 
             align = Qt.AlignmentFlag(0) #align left
             
@@ -1026,13 +1051,14 @@ class Program:
             
             self.buttonsLayout.addWidget(button2,alignment=align)
             self.buttonsLayout.addWidget(helpButton,alignment=align)
-
+            self.buttonsLayout.addWidget(QLabel(""))
             self.outerLayout.addLayout(self.buttonsLayout)
             self.outerLayout.addWidget(self.gdbInput)
             self.outerLayout.addLayout(self.labelsLayout)
             #i dunno about this one 
             
             self.gdbOutputText = QLabel("output from gdb commands will populate here.")
+            self.gdbOutputText.setMaximumWidth(500)
             self.gdbOutputLayout.addWidget(self.gdbOutputText)
             self.outerLayout.addLayout(self.gdbOutputLayout)
             #self.gdbOutputText.setFixedWidth(500)
@@ -1046,25 +1072,34 @@ class Program:
             #generate the help dialogue box, basically will list commands and what they do (pprint docstring more or less)
             
         def changeCentralLabels(self,text,givenColors=0):
-            
+            tmplist = [""]*len(text[0])
+            text.append(tmplist)
             zlist= list(zip(*text))
+            #print(zlist)
             #i think this one works. double check math later
-            num_needed=len(text[0])*3
-            print(f"i should need:{num_needed} l-zlist: {len(zlist[0])}")
+            num_needed=len(text[0])*4
+            #print(f"i should need:{num_needed} l-zlist: {len(zlist[0])}")
             if(givenColors):
-                num_needed=len(text[0])*3
+                #num_needed=len(text[0])*4
                 self.setNumLabels(num_needed)
             else:
-                num_needed=len(text[0])*3
+                #num_needed=len(text[0])*4
                 self.setNumLabels(num_needed)
                 count = 0
-                print(f"i should need:{num_needed} l-zlist: {len(zlist)}")
+                
+                #print(f"i should need:{num_needed} l-zlist: {len(zlist)}")
                 for i in range(len(zlist)):
                     for j in range(len(zlist[i])):
+                        if(i==0 and j==0):
+                            count+count+1
+                    
                         itemWidget = self.labelsLayout.itemAt(count).widget()
+                        #itemWidget.setText(f"i: {i} j: {j} {zlist[i][j]}")
                         itemWidget.setText(zlist[i][j])
                         count=count+1    
-            
+                        
+                    # itemWidget.setText("")
+                    # count=count+1
         def setNumLabels(self,num_needed):
 
             numberCurrentLabels = self.labelsLayout.count()
@@ -1076,6 +1111,9 @@ class Program:
             #now put back only the ones we need. 
             for i in range(num_needed):
                 label = QLabel(f"new label{i}")
+                label.setMaximumWidth(200)
+                label.setAlignment(Qt.AlignmentFlag.AlignAbsolute)
+                
                 self.labelsLayout.addWidget(label)        
             
         def gdbInputReturnPressed(self):
@@ -1393,6 +1431,47 @@ class pwindow (gdb.Command):
         
 pwindow() 
 
+#gdb command that will print stack registers including certain things from info frame and stat/maps
+#<<TODO>> add 3rd column of what these things are pointing too 
+class pstack (gdb.Command):
+    """print the stack registers known at the current point"""
+    def __init__(self):
+                                 #cmd user types in goeshere
+        super(pstack,self).__init__("pstack",gdb.COMMAND_USER)
+    #this is what happens when they type in the command     
+    def invoke(self, arg, from_tty):
+        if(isGDBRunningpy()):
+            argString = arg.strip('').split('-')
+            if(not myProgram.window.isVisible()):
+                print("invoking pstack")
+                print(f"len arg: {len(arg)} it is: {arg} type: {type(arg)} argstring: {argString}")
+            myProgramStack.getRegs()
+            myProgramStack.sortRegs()
+            if(from_tty):
+                if(not myProgram.window.isVisible()):
+                    
+                    myProgramStack.printAll()
+                else:
+                    pair = myProgramStack.getRegisterPairs()
+                    myProgramWindow.changeCentralLabels([myProgramStack.stackRegisterNames,myProgramStack.stackRegisterAddresses,pair])        
+            else:
+                print("updating gdb window pstack")
+                pair = myProgramStack.getRegisterPairs()
+                print("before update: ", myProgramStack.stackRegisterNames,myProgramStack.stackRegisterAddresses,pair)
+                # if(myProgramWindow.isVisible):
+                #     myProgramStack.stackRegisterNames.insert(0,"register")
+                #     myProgramStack.stackRegisterAddresses.insert(0,"address")
+                #pair.insert(0,"pointed to")
+                #print(myProgramVariables.variableInfo)
+                myProgramWindow.changeCentralLabels([myProgramStack.stackRegisterNames,myProgramStack.stackRegisterAddresses,pair])    
+                #gdbWindow.updateGDBLabelText([myProgramStack.stackRegisterNames,myProgramStack.stackRegisterAddresses,pair])    
+            # if window.isVisible():   
+            #     myProgramStack.printAll()
+        else:
+            print("not debugging, please run before using.")
+        
+pstack() 
+
 class pfunc (gdb.Command):
     """print the functions known to the program at the current point"""
     def __init__(self):
@@ -1415,13 +1494,31 @@ class pfunc (gdb.Command):
             
         #justification is not easy. punt for later its a small issue. 
         if(myProgramWindow.isVisible()):
-                    
             myProgramFunctions.funcSortByNumber()
-            outst=myProgramFunctions.printAll()
-            printme = ""
-            for o in outst:
-                printme=printme+o+"\n"
-            myProgramWindow.centralLabel.setText(printme)
+
+            names = myProgramFunctions.functionsName 
+            addrs = myProgramFunctions.functionsAddr
+            nums = myProgramFunctions.functionsLine
+            blank = [""]*len(names)
+            #nameout = []
+            #a_list = [[1,2], [2,3], [3,4]]
+            #b_list = [[9], [10,11], [12,13]]
+            new_list = [a +':'+ b for a, b in zip(nums, names)]
+            new_list.insert(0,"line:function")
+            addrs.insert(0,"address")
+            blank.append("")
+            # myProgramFunctions.funcSortByNumber()
+            # outst=myProgramFunctions.printAll()
+            # printme = []
+            # for o in outst:
+            #     #printme.append(o)
+            #     print(o)
+            # print("outst[i]~~~~")
+            # for i in range(len(outst)):
+            #     print(i,outst[i][1])    
+            #myProgramWindow.setNumLabels(2) 
+            myProgramWindow.changeCentralLabels([new_list,addrs,blank])
+            #myProgramWindow.centralLabel.setText(printme)
             #print(printme)
 
 pfunc()
@@ -1488,6 +1585,374 @@ def printPair(names,addrs,colors,data):
         else:
             out = colored(f"{names[i]}{spaceString}{addrs[i]}     {data[i]}",colors[i])
         print(out)
+
+#gdb command to print information from the stat file. 
+class pstat (gdb.Command):
+    """print information from proc/$pid/stat"""
+    def __init__(self):
+                                 #cmd user types in goeshere
+        super(pstat,self).__init__("pstat",gdb.COMMAND_USER)
+    #this is what happens when they type in the command     
+    def invoke(self, arg, from_tty):
+        if(not myProgram.window.isVisible()):
+            print("invoking pstat")
+            
+        else:
+            myProgram.getThingsFromStat()
+            
+            
+            #sort the list by address
+            for i in range(len(myProgram.statHexInfo)):
+                for j in range(len(myProgram.statHexInfo)):
+                    if int(myProgram.statHexInfo[i],16) < int(myProgram.statHexInfo[j],16):
+                        #print("is true")
+                        tmpaddr = myProgram.statHexInfo[i]
+                        myProgram.statHexInfo[i] = myProgram.statHexInfo[j]
+                        myProgram.statHexInfo[j] = tmpaddr
+                        tmpname = myProgram.statWhatInfo[i]
+                        myProgram.statWhatInfo[i] = myProgram.statWhatInfo[j]
+                        myProgram.statWhatInfo[j] = tmpname            
+            myProgram.statWhatInfo.insert(0,"info") 
+            myProgram.statHexInfo.insert(0,"address")    
+            #add the 2 lists to the gui
+            count = 0
+            myProgramWindow.setNumLabels(len(myProgram.statWhatInfo)*4)
+            for i in range(len(myProgram.statWhatInfo)):
+                for j in range(4):
+                    if j ==0:
+                        
+                        nameWidget = myProgramWindow.labelsLayout.itemAt(count).widget()
+                        nameWidget.setText(myProgram.statWhatInfo[i])
+                        
+                    elif j ==1:
+                        
+                        addrWidget = myProgramWindow.labelsLayout.itemAt(count).widget()
+                        addrWidget.setText(myProgram.statHexInfo[i])    
+                        
+                    else:    
+                        
+                        blankWidget = myProgramWindow.labelsLayout.itemAt(count).widget()
+                        blankWidget.setText("")        
+                    
+                    count=count+1
+            
+            # for w in myProgram.statWhatInfo:
+            #     print(w)
+           
+        if(from_tty):
+            myProgram.getThingsFromStat()
+            myProgram.printStatInfo()
+pstat() 
+
+#gdb command to print information from the maps file 
+class pmaps (gdb.Command):
+    """print informtaion from proc/$pid/maps"""
+    def __init__(self):
+                                 #cmd user types in goeshere
+        super(pmaps,self).__init__("pmaps",gdb.COMMAND_USER)
+    #this is what happens when they type in the command     
+    def invoke(self, arg, from_tty):
+        if(not myProgram.window.isVisible()):
+            print("invoking pmaps")
+            myProgram.getStackHeapRangeFromMaps()    
+        else:
+            myProgram.getStackHeapRangeFromMaps()
+
+            h = f'heap: {myProgram.mapHeapTop } - {myProgram.mapHeapBottom}\n'
+            s = f'stack: {myProgram.mapStackTop } - {myProgram.mapStackBottom }\n'
+            myProgramWindow.setNumLabels(1)
+            myProgramWindow.labelsLayout.itemAt(0).widget().setMaximumWidth(500)
+            myProgramWindow.labelsLayout.itemAt(0).widget().setText(h+s)
+            
+
+        if(from_tty):
+            myProgram.printStackHeapRange()
+        
+pmaps() 
+#<<TODO>> make saved_EIP point to eip register as data 
+#<<rethere pprint>>
+class pprint (gdb.Command):
+    """run all p commands and hope for the best
+    <copy paste information for all functions here>  gdb.execute('pfunc')
+    supported commands:
+        'pvars'
+        prints contents of the stack at the current line in the program. 
+            
+            Builder mode: 
+            simple mode: 
+            <complex/full> mode: 
+        'pfunc'
+            uilder mode: 
+            simple mode: 
+            <complex/full> mode:
+        'pmap'
+            uilder mode: 
+            simple mode: 
+            <complex/full> mode:
+        'pstat'
+            uilder mode: 
+            simple mode: 
+            <complex/full> mode:
+        'pstack'
+            prints contents of the stack at the current line in the program. 
+            
+            Builder mode: add and print stack 
+            simple mode: print most important stack information 
+            <complex/full> mode: print all stack information
+        'changecolor' type color
+            type: var, func, special, regs
+                var: changes variable color (default: << color here >>)
+                func: changes functions colors (default: << color here >>)
+                reg: changes general register colors (default: << color here >>)
+                special: changes the special registers colors ('eip', 'edx', 'edi', 'saved_ebp')
+            supported colors: https://pypi.org/project/termcolor/
+
+        pprint: print all information and display with the current mode 
+            builder mode: 
+                print all information that has been "built"
+            simple mode: 
+                print all simple information
+            <complex/full> mode:
+                print everything, Yes Everything. You have been warned. 
+            <Debug mode>: print debug information (lots of terminal output helpful trace information in finding problems with the program )    
+    """
+    def __init__(self):
+                                 #cmd user types in goeshere
+        super(pprint,self).__init__("pprint",gdb.COMMAND_USER)
+    #this is what happens when they type in the command     
+    def invoke(self, arg, from_tty):
+        #need flag for all, gui, ...tui?
+        if(myProgram.mode =='complex'):
+            builderPrint()
+            return
+        #need add extranious things like data and stuff
+        bigListNames = []
+        bigListAddrs = []
+        bigListColors = []
+        bigListData = []
+        #argString = arg.strip('').split('-')
+        if(not myProgram.window.isVisible()):
+            print("invoking pprint")
+        gdb.execute('pfunc')
+        gdb.execute('pvars')
+        gdb.execute('pmap')
+        gdb.execute('pstat')
+        gdb.execute('pstack')
+        myProgramStack.getFrameInfo()
+        if(not myProgram.window.isVisible()):
+            print("gathered all data ")
+        #manual stuff 
+        #map 
+        #may need to check if empty here 
+        # if(myProgram.mapHeapBottom==''):
+        #     pass
+        # else:
+        if(myProgram.mapHeapBottom == ""):
+            pass
+        else:
+            bigListNames.append("map_heap_bottom")
+            bigListAddrs.append(myProgram.mapHeapBottom)
+            bigListNames.append("map_heap_top")
+            bigListAddrs.append(myProgram.mapHeapTop)
+            bigListColors.append("white")
+            bigListColors.append("white")
+
+        bigListNames.append("map_stack_bottom")
+        bigListAddrs.append(myProgram.mapStackBottom)
+        bigListNames.append("map_stack_top")
+        bigListAddrs.append(myProgram.mapStackTop)
+        bigListColors.append(myProgramStack.boundryColor)
+        bigListColors.append(myProgramStack.boundryColor)
+        if(not myProgram.window.isVisible()):
+            print("finished appending mapstack")
+        #automated stuff 
+        #stack registers
+        #stack registers is not apending the color properly when changing
+        special_registers = ['eip', 'edx', 'edi', 'saved_ebp'] #double check these 
+        for i in range(len(myProgramStack.stackRegisterNames)):
+            bigListNames.append(myProgramStack.stackRegisterNames[i])
+            bigListAddrs.append(myProgramStack.stackRegisterAddresses[i])
+            found = 0
+            for specReg in special_registers:
+                
+                if(myProgramStack.stackRegisterNames[i] == specReg):
+                    bigListColors.append(myProgram.specialRegisterColor)
+                    found = 1
+            if(not found):    
+                bigListColors.append(myProgram.regColor)
+        if(not myProgram.window.isVisible()):        
+            print("appended stack registers")    
+
+        #functions
+        for i in range(len(myProgramFunctions.functionsName)):
+            bigListNames.append(myProgramFunctions.functionsName[i])
+            bigListAddrs.append(myProgramFunctions.functionsAddr[i])
+            bigListColors.append(myProgram.funcColor)
+        if(not myProgram.window.isVisible()):
+            print("appended functions")        
+        #variable info
+        for i in range(len(myProgramVariables.varNames)):
+            bigListNames.append(myProgramVariables.varNames[i])
+            bigListAddrs.append(myProgramVariables.varAddrs[i])
+            bigListColors.append(myProgram.varColor)
+             
+        #stat 
+        if(myProgram.mode != "default"):# or myProgram.mode != "simple"):
+            for i in range(len(myProgram.statHexInfo)):
+                bigListNames.append(myProgram.statWhatInfo[i])
+                bigListAddrs.append(myProgram.statHexInfo[i])
+                bigListColors.append("white")
+        for name in bigListNames:
+            try:
+                #variable type with whatis
+                #out = gdb.execute(f"whatis {var}",to_string = True)
+                #self.getVariableType()
+                #print(f"{var}: {out}")
+                out = gdb.execute(f"print {name}",to_string = True)
+                o = out.split()
+                #o = o.replace("'",'')
+                #print(f"{var}: {out} o:{o} len: {len(o)}")
+                if(len(o)>3):
+                    #remove ' and " characters
+                    d1 = o[3].strip('\"')
+                    datast =d1.replace("'",'')
+                    #print("this is a character")
+                #   print(print(f"{var}: {o[3][0]}"))
+                else:
+                    #remove ' and " characters
+                    d1 = o[2].strip('\"')
+                    datast =d1.replace("'",'')
+            #dont add data that has has not been initialized yet. 
+                #print(f"datast: {datast}")
+                if(not myProgram.window.isVisible()):
+                    print("datast: ", datast)
+                if(datast=='<error:'):
+                   bigListData.append('null') 
+                elif(datast=='()}' or datast=='(int)}' or datast=='(int,'):
+                   bigListData.append('function')       
+                #print(f"the datast for {var}: {datast} 0th_char: {datast[0]}")  
+                elif(datast==''):
+                    bigListData.append('')
+                else: 
+                    bigListData.append(datast)
+            #except gdb.MemoryError or gdb.error:
+            except:
+                #print("some memerror, ignoring")
+                bigListData.append('')
+            
+            boundryList = ["esp", "saved_ebp", "previous_sp"]
+        for i in range(len(bigListNames)):
+            for b in boundryList:
+                if (bigListNames[i] == b ):
+                    bigListColors[i] = myProgramStack.boundryColor 
+        for i in range(len(bigListNames)):
+            if (bigListNames[i] == "argv" ):
+                bigListColors[i] = myProgram.varColor 
+        for i in range(len(bigListNames)):
+            if (bigListNames[i] == "esp" ):
+                bigListData[i] = "$sp"
+        
+        for i in range(len(bigListNames)):
+         #   print(f"bigdata: {i}  {bigListData[i]}")
+        #print(len(bigListData))     
+            if (bigListNames[i] == 'saved_ebx'):
+                bigListColors[i] = 'white'       
+                for j in range(len(bigListData)):
+                    if(bigListNames[j] == 'ebx'):
+                        bigListData[i] = 'ebx_'+bigListAddrs[j]
+                        bigListData[j] = 'saved_ebx_'+bigListAddrs[i]
+                        if(not myProgram.window.isVisible()):
+                            print("eip has been found")
+                        break
+
+            if (bigListNames[i] == 'saved_eip'):
+                bigListColors[i] = 'magenta' 
+                  
+                for j in range(len(bigListData)):
+                    if(bigListNames[j] == 'eip'):
+                        bigListData[i] = 'eip_'+bigListAddrs[j]
+                        if(not myProgram.window.isVisible()):
+                            print("eip has been found")
+                        break
+            if( bigListNames[i] == 'previous_sp'  ):
+                bigListColors[i] = 'magenta'   
+                out = gdb.execute('p $sp',to_string = True)
+                try:
+                    m = re.search('0x\w+',out)
+                    spAddr = m.group(0)
+                    bigListData[i] = "$sp_"+spAddr
+                except:
+                    pass
+
+        if(from_tty):
+            if(not myProgram.window.isVisible()):
+                printPair(bigListNames,bigListAddrs,bigListColors,bigListData)
+          
+        sortedNames, sortedAddrs, sortedColors, sortedData = sortTheBigList(bigListNames,bigListAddrs,bigListColors,bigListData)
+        if(myProgram.window.isVisible()):
+            #printPairNoColor(bigListNames,bigListAddrs,bigListData)
+            myProgram.window.changeCentralLabels(bigListNames,bigListAddrs,bigListData)
+            #myProgram.window.gdbWindow.updateGDBLabelText([sortedNames,sortedAddrs,sortedColors,sortedData],1)
+            #<<TODO>>
+            #the window is visible here, so lets display the contents there
+            #<<rethere>>
+            #printPair(bigListNames,bigListAddrs,bigListColors,bigListData)  
+        #short message about what color things are 
+        varout = colored("variables "+myProgram.varColor,myProgram.varColor)
+        funcout= colored("functions "+myProgram.funcColor,myProgram.funcColor) 
+        regsout = colored("regs " + myProgram.regColor, myProgram.regColor)
+        specregsout = colored("special registers " + myProgram.specialRegisterColor, myProgram.specialRegisterColor)
+        stackboundry = colored("stack boundry "+myProgramStack.boundryColor, myProgramStack.boundryColor)
+        if(not myProgram.window.isVisible()):
+            print(varout,funcout,regsout, specregsout, stackboundry)
+        #now print the full thing 
+        if(from_tty):
+            if(not myProgram.window.isVisible()):
+                printPair(sortedNames,sortedAddrs,sortedColors,sortedData)
+        
+        myProgram.sortedAddrs = sortedAddrs
+        myProgram.sortedNames = sortedNames
+        myProgram.sortedColors = sortedColors
+        myProgram.sortedData = sortedData
+       # print(len(sortedAddrs), len(sortedNames), len(sortedColors))
+        #only append if there has been changes
+        #we also dont care about the list being "unhashable" after the first time we call pprint anyway
+        try:
+            if(set(myProgram.trackStacks) == set()):
+                #myProgram.addStackTrack(sortedNames,sortedAddrs,sortedData,sortedColors)
+                
+                myProgram.trackStacks.append([sortedNames,sortedAddrs,sortedColors,sortedData])
+        except:
+            pass
+        localSet = set(sortedAddrs)
+        #print("local set: ",localSet)
+        #print("myprogramstacks ", myProgram.trackStacks)
+        for s in myProgram.trackStacks:
+            #print(s)
+            trackedSet = set(s[1])
+            
+            print("set difference: ", localSet - trackedSet)
+            print("len of labels:", len(sortedNames))
+            #change to != later <<TODO>>
+            if(trackedSet - localSet == set()):
+                if(not myProgram.window.isVisible()):
+                    print("nothing to do here the set is empty")
+                #print(trackedSet)
+            else:
+                if(not myProgram.window.isVisible()):
+                    print("not empty add to list")
+                
+                myProgram.trackStacks.append([sortedNames,sortedAddrs,sortedColors,sortedData])
+                break
+        # localStackLine = n2
+        # for line in myProgram.trackStackLines:
+        #     if line == localStackLine:
+        #         return      
+        # myProgram.trackStackLines.append(localStackLine) 
+        # myProgram.trackStacks.append([sortedNames,sortedAddrs,sortedData,sortedColors])
+        #myProgram.addSorted(sortedAddrs,sortedNames,sortedColors)
+        
+pprint() 
 
 def printPairNoColor(names,addrs,data):
     print("print pair no color invoked")
