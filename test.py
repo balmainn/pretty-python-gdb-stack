@@ -690,8 +690,12 @@ class pvars (gdb.Command):
 
                     lst = [myProgramVariables.varNames,myProgramVariables.varAddrs,myProgramVariables.varDatas]
                     #lst = [myProgramVariables.varNames,myProgramVariables.varAddrs,myProgramVariables.varDatas,colors]
-                    myProgramWindow.changeCentralLabels(lst)
-                    #gdbWindow.updateGDBLabelText([myProgramVariables.varNames,myProgramVariables.varAddrs,myProgramVariables.varDatas])
+
+                    argString = arg.strip('').split('-')
+                    if(myProgramWindow.isVisible() and argString[0] != 'from_pprint'):
+                        myProgramWindow.changeCentralLabels(lst)
+
+                    
             #myProgramVariables.sort()
             #myProgramVariables.printAll()
         else:
@@ -889,9 +893,11 @@ class Program:
             command3 = f"${location}" 
             command_out = command1 + command2 +command3 +command4 
             statout = ( (os.popen(f"{command_out}").read()).strip('\n') )
+            
             info.append(statout)
             h = hex(int(statout))
             hexinfo.append(h)
+            
         
         
         #or i in range(len(whatInfo)):
@@ -921,6 +927,7 @@ class Program:
         #return whatInfo, hexinfo
         #print(f"info: {info}")
     #print information from that file in a better format so we can read it. 
+        print("getThingsFromStatDone")
     def printStatInfo(self):
         print("print stat")
         print( len(self.statWhatInfo),len(self.statHexInfo))
@@ -1058,7 +1065,7 @@ class Program:
             #i dunno about this one 
             
             self.gdbOutputText = QLabel("output from gdb commands will populate here.")
-            self.gdbOutputText.setMaximumWidth(500)
+            self.gdbOutputText.setMaximumWidth(1000)
             self.gdbOutputLayout.addWidget(self.gdbOutputText)
             self.outerLayout.addLayout(self.gdbOutputLayout)
             #self.gdbOutputText.setFixedWidth(500)
@@ -1071,12 +1078,13 @@ class Program:
             #self.setCentralWidget(widget)
             #generate the help dialogue box, basically will list commands and what they do (pprint docstring more or less)
             
-        def changeCentralLabels(self,text,givenColors=0):
+        def changeCentralLabels(self,text,givenColors=0,givenHeader=0):
             tmplist = [""]*len(text[0])
             text.append(tmplist)
             zlist= list(zip(*text))
             #print(zlist)
             #i think this one works. double check math later
+            #num_needed=len(text[0])*len(text)
             num_needed=len(text[0])*4
             #print(f"i should need:{num_needed} l-zlist: {len(zlist[0])}")
             if(givenColors):
@@ -1090,8 +1098,9 @@ class Program:
                 #print(f"i should need:{num_needed} l-zlist: {len(zlist)}")
                 for i in range(len(zlist)):
                     for j in range(len(zlist[i])):
-                        if(i==0 and j==0):
-                            count+count+1
+                        if(givenHeader):
+                            if(i==0 and j==0):
+                                count=count+1
                     
                         itemWidget = self.labelsLayout.itemAt(count).widget()
                         #itemWidget.setText(f"i: {i} j: {j} {zlist[i][j]}")
@@ -1103,6 +1112,7 @@ class Program:
         def setNumLabels(self,num_needed):
 
             numberCurrentLabels = self.labelsLayout.count()
+            print(f"current number of labels: {numberCurrentLabels} number needed: {num_needed}")
             #remove all labels
             for i in reversed(range(numberCurrentLabels)):
                 item = self.labelsLayout.itemAt(i)
@@ -1124,13 +1134,15 @@ class Program:
             print(text)    
             self.gdbInput.setText("")
             #self.gdbOutputText.setText(text)
-            try:
-                out = gdb.execute(text,to_string=True)
-                #gdb.execute(text,to_string=True)
-                self.gdbOutputText.setText(out)
-            except gdb.error as e:
-                self.gdbOutputText.setText(str(e))
-                pass
+            gdb.execute(text)
+            # try:
+            #     #out = gdb.execute(text,to_string=True)
+               
+            #     #gdb.execute(text,to_string=True)
+            #     #self.gdbOutputText.setText(out)
+            # except gdb.error as e:
+            #     #self.gdbOutputText.setText(str(e))
+            #     pass
             cw.setCodeText()
             cw.setNumberLabels()
         def helpButtonClicked(self):
@@ -1442,9 +1454,9 @@ class pstack (gdb.Command):
     def invoke(self, arg, from_tty):
         if(isGDBRunningpy()):
             argString = arg.strip('').split('-')
-            if(not myProgram.window.isVisible()):
-                print("invoking pstack")
-                print(f"len arg: {len(arg)} it is: {arg} type: {type(arg)} argstring: {argString}")
+            
+            print("invoking pstack")
+            print(f"len arg: {len(arg)} it is: {arg} type: {type(arg)} argstring: {argString}")
             myProgramStack.getRegs()
             myProgramStack.sortRegs()
             if(from_tty):
@@ -1453,17 +1465,21 @@ class pstack (gdb.Command):
                     myProgramStack.printAll()
                 else:
                     pair = myProgramStack.getRegisterPairs()
-                    myProgramWindow.changeCentralLabels([myProgramStack.stackRegisterNames,myProgramStack.stackRegisterAddresses,pair])        
+                    #from pprint how bug
+                    #myProgramWindow.changeCentralLabels([myProgramStack.stackRegisterNames,myProgramStack.stackRegisterAddresses,pair])        
             else:
                 print("updating gdb window pstack")
                 pair = myProgramStack.getRegisterPairs()
                 print("before update: ", myProgramStack.stackRegisterNames,myProgramStack.stackRegisterAddresses,pair)
-                # if(myProgramWindow.isVisible):
-                #     myProgramStack.stackRegisterNames.insert(0,"register")
-                #     myProgramStack.stackRegisterAddresses.insert(0,"address")
+                if(myProgramWindow.isVisible() and argString[0] != 'from_pprint'):
+                    myProgramStack.stackRegisterNames.insert(0,"register")
+                    myProgramStack.stackRegisterAddresses.insert(0,"address")
+                    myProgramWindow.changeCentralLabels([myProgramStack.stackRegisterNames,myProgramStack.stackRegisterAddresses,pair])    
                 #pair.insert(0,"pointed to")
                 #print(myProgramVariables.variableInfo)
-                myProgramWindow.changeCentralLabels([myProgramStack.stackRegisterNames,myProgramStack.stackRegisterAddresses,pair])    
+                
+                #same bug figure out how to invoke from pprint and the window seperately 
+                
                 #gdbWindow.updateGDBLabelText([myProgramStack.stackRegisterNames,myProgramStack.stackRegisterAddresses,pair])    
             # if window.isVisible():   
             #     myProgramStack.printAll()
@@ -1479,6 +1495,7 @@ class pfunc (gdb.Command):
         super(pfunc,self).__init__("pfunc",gdb.COMMAND_USER)
     #this is what happens when they type in the command     
     def invoke(self, arg, from_tty):
+        
         argString = arg.strip('').split('-')
         #print(arg)
         
@@ -1504,9 +1521,15 @@ class pfunc (gdb.Command):
             #a_list = [[1,2], [2,3], [3,4]]
             #b_list = [[9], [10,11], [12,13]]
             new_list = [a +':'+ b for a, b in zip(nums, names)]
-            new_list.insert(0,"line:function")
-            addrs.insert(0,"address")
-            blank.append("")
+            
+            argString = arg.strip('').split('-')
+            if(myProgramWindow.isVisible() and argString[0] != 'from_pprint'):
+                new_list.insert(0,"line:function")
+                addrs.insert(0,"address")
+                blank.append("")
+                myProgramWindow.changeCentralLabels([new_list,addrs,blank])
+            #myProgramWindow.changeCentralLabels([new_list,addrs,blank])   
+             
             # myProgramFunctions.funcSortByNumber()
             # outst=myProgramFunctions.printAll()
             # printme = []
@@ -1517,7 +1540,7 @@ class pfunc (gdb.Command):
             # for i in range(len(outst)):
             #     print(i,outst[i][1])    
             #myProgramWindow.setNumLabels(2) 
-            myProgramWindow.changeCentralLabels([new_list,addrs,blank])
+            
             #myProgramWindow.centralLabel.setText(printme)
             #print(printme)
 
@@ -1594,6 +1617,7 @@ class pstat (gdb.Command):
         super(pstat,self).__init__("pstat",gdb.COMMAND_USER)
     #this is what happens when they type in the command     
     def invoke(self, arg, from_tty):
+        #current project make this flow better. 
         if(not myProgram.window.isVisible()):
             print("invoking pstat")
             
@@ -1612,29 +1636,35 @@ class pstat (gdb.Command):
                         tmpname = myProgram.statWhatInfo[i]
                         myProgram.statWhatInfo[i] = myProgram.statWhatInfo[j]
                         myProgram.statWhatInfo[j] = tmpname            
-            myProgram.statWhatInfo.insert(0,"info") 
-            myProgram.statHexInfo.insert(0,"address")    
+            
+            #from pprint bug here
+            argString = arg.strip('').split('-')
+            if(myProgramWindow.isVisible() and argString[0] != 'from_pprint'):
+                myProgram.statWhatInfo.insert(0,"info") 
+                myProgram.statHexInfo.insert(0,"address")  
+              
             #add the 2 lists to the gui
-            count = 0
-            myProgramWindow.setNumLabels(len(myProgram.statWhatInfo)*4)
-            for i in range(len(myProgram.statWhatInfo)):
-                for j in range(4):
-                    if j ==0:
-                        
-                        nameWidget = myProgramWindow.labelsLayout.itemAt(count).widget()
-                        nameWidget.setText(myProgram.statWhatInfo[i])
-                        
-                    elif j ==1:
-                        
-                        addrWidget = myProgramWindow.labelsLayout.itemAt(count).widget()
-                        addrWidget.setText(myProgram.statHexInfo[i])    
-                        
-                    else:    
-                        
-                        blankWidget = myProgramWindow.labelsLayout.itemAt(count).widget()
-                        blankWidget.setText("")        
-                    
-                    count=count+1
+                count = 0
+                if(0):
+                    myProgramWindow.setNumLabels(len(myProgram.statWhatInfo)*4)
+                    for i in range(len(myProgram.statWhatInfo)):
+                        for j in range(4):
+                            if j ==0:
+                                
+                                nameWidget = myProgramWindow.labelsLayout.itemAt(count).widget()
+                                nameWidget.setText(myProgram.statWhatInfo[i])
+                                
+                            elif j ==1:
+                                
+                                addrWidget = myProgramWindow.labelsLayout.itemAt(count).widget()
+                                addrWidget.setText(myProgram.statHexInfo[i])    
+                                
+                            else:    
+                                
+                                blankWidget = myProgramWindow.labelsLayout.itemAt(count).widget()
+                                blankWidget.setText("")        
+                            
+                            count=count+1
             
             # for w in myProgram.statWhatInfo:
             #     print(w)
@@ -1652,6 +1682,7 @@ class pmaps (gdb.Command):
         super(pmaps,self).__init__("pmaps",gdb.COMMAND_USER)
     #this is what happens when they type in the command     
     def invoke(self, arg, from_tty):
+        argString = arg.strip('').split('-')
         if(not myProgram.window.isVisible()):
             print("invoking pmaps")
             myProgram.getStackHeapRangeFromMaps()    
@@ -1660,9 +1691,12 @@ class pmaps (gdb.Command):
 
             h = f'heap: {myProgram.mapHeapTop } - {myProgram.mapHeapBottom}\n'
             s = f'stack: {myProgram.mapStackTop } - {myProgram.mapStackBottom }\n'
-            myProgramWindow.setNumLabels(1)
-            myProgramWindow.labelsLayout.itemAt(0).widget().setMaximumWidth(500)
-            myProgramWindow.labelsLayout.itemAt(0).widget().setText(h+s)
+            
+            if(myProgramWindow.isVisible() and argString[0] != 'from_pprint'):
+                myProgramWindow.setNumLabels(1)
+                myProgramWindow.labelsLayout.itemAt(0).widget().setMaximumWidth(500)
+                #part visual bug here <<RET TODO>>
+                myProgramWindow.labelsLayout.itemAt(0).widget().setText(h+s)
             
 
         if(from_tty):
@@ -1731,16 +1765,20 @@ class pprint (gdb.Command):
         bigListColors = []
         bigListData = []
         #argString = arg.strip('').split('-')
-        if(not myProgram.window.isVisible()):
-            print("invoking pprint")
-        gdb.execute('pfunc')
-        gdb.execute('pvars')
-        gdb.execute('pmap')
-        gdb.execute('pstat')
-        gdb.execute('pstack')
+        
+        print("invoking pprint")
+        gdb.execute('pfunc from_pprint')
+        gdb.execute('pvars from_pprint')
+        print("pvars done")
+        gdb.execute('pmap from_pprint')
+        print('pmap done')
+        gdb.execute('pstat from_pprint')
+        print("pstat done")
+        gdb.execute('pstack from_pprint')
+        print("p stack done")
         myProgramStack.getFrameInfo()
-        if(not myProgram.window.isVisible()):
-            print("gathered all data ")
+        
+        print("gathered all data ")
         #manual stuff 
         #map 
         #may need to check if empty here 
@@ -1891,7 +1929,7 @@ class pprint (gdb.Command):
         sortedNames, sortedAddrs, sortedColors, sortedData = sortTheBigList(bigListNames,bigListAddrs,bigListColors,bigListData)
         if(myProgram.window.isVisible()):
             #printPairNoColor(bigListNames,bigListAddrs,bigListData)
-            myProgram.window.changeCentralLabels(bigListNames,bigListAddrs,bigListData)
+            myProgram.window.changeCentralLabels([bigListNames,bigListAddrs,bigListData])
             #myProgram.window.gdbWindow.updateGDBLabelText([sortedNames,sortedAddrs,sortedColors,sortedData],1)
             #<<TODO>>
             #the window is visible here, so lets display the contents there
