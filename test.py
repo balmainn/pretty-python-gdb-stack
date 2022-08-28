@@ -22,6 +22,7 @@ from  PyQt6 import *
 #for l in lines:
 #     print(l)
 import re
+import gdb
 gdb.execute('b main')
 gdb.execute('r')
 
@@ -2055,3 +2056,17 @@ def isGDBRunningpy():
                 print(f"i am running, my pid is: {pid}")
             return pid
 
+
+
+class tcmd (gdb.Command):
+    """reload this file, with changes"""
+    def __init__(self):
+                                 #cmd user types in goeshere
+        super(resource,self).__init__("tcmd",gdb.COMMAND_USER)
+    #this is what happens when they type in the command     
+    def invoke(self, arg, from_tty):
+        
+        #gdb.execute("source test.py")
+        print("test print completed")
+resource() 
+gdb.execute("tcmd")
