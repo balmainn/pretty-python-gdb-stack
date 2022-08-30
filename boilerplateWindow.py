@@ -48,6 +48,7 @@ class MainWindow(QMainWindow):
         addLabelButton = QPushButton("addLabels")
         removeLabelButton = QPushButton("Remove Labels")
         helpButton =QPushButton("Help")
+        helpButton.clicked.connect(lambda: self.tfunc("testinput") )
         #addLabelButton.clicked.connect(self.addLabel)
         #removeLabelButton.clicked.connect(self.removeLabel)
 
@@ -92,6 +93,8 @@ class MainWindow(QMainWindow):
         #addWidget(widget, fromRow, fromColumn, rowSpan, columnSpan, alignment)
         
         #self.setCentralWidget(widget)
+    def tfunc(self, instring):
+        print(instring)
 app = QApplication(sys.argv)
 
 window = MainWindow()

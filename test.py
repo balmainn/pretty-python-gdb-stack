@@ -19,6 +19,7 @@ from PyQt6.QtWidgets import *
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
 from  PyQt6 import *
+import PyQt6 as pqt6
 #for l in lines:
 #     print(l)
 import re
@@ -312,6 +313,7 @@ class Stack:
             frameRegs.append(previous_sp)
             frameRegNames.append("previous_sp")
         return frameRegNames, frameRegs
+
 class Func:
 
     def __init__(self):
@@ -321,7 +323,7 @@ class Func:
         self.functionsAddr = []
         self.funcInfo = [self.functionsName,self.functionsLine,self.functionsAddr]
         #delete later
-        self.app = QApplication(sys.argv)
+        #self.app = QApplication(sys.argv)
         
 
     #function that retreives all functions from the currently running program
@@ -694,6 +696,7 @@ class pvars (gdb.Command):
 
                     argString = arg.strip('').split('-')
                     if(myProgramWindow.isVisible() and argString[0] != 'from_pprint'):
+                        print(lst)
                         myProgramWindow.changeCentralLabels(lst)
 
                     
@@ -719,20 +722,23 @@ def pvartest(input,givenColors=0):
         pass
     
     #print(input)
-
+print("before program")
 class Program:
 
     def __init__(self):   
+        print("inside program")
         #programs have a stack, a heap, functions, and variables.
         self.programStack = Stack()
         self.programHeap = Heap()
         self.programFuncs = Func()
         self.programVariables = Variables()
         self.app = QApplication(sys.argv)
+        print("after sysargv")
+        
         self.window = self.MainWindow()
         self.codeWindow = self.window.w1
         
-        
+
         #mode the program runs in (should initialze to something)
         #simple / default are the same thing
         #self.mode = ""
@@ -858,8 +864,8 @@ class Program:
     #get the running program's process ID
     #this starts debugging leaving it on the first line of main. 
     def getPID(self):
-        gdb.execute('b main')
-        gdb.execute('r')
+        #gdb.execute('b main')
+        #gdb.execute('r')
         out = gdb.execute('info proc files',to_string = True)
         print(out[8:-1])
         pid = out[8:-1]
@@ -1008,13 +1014,31 @@ class Program:
             self.setCentralWidget(self.scroll)
             self.outerLayout = QVBoxLayout()
             self.buttonsLayout = QHBoxLayout()
+            
             self.labelsLayout = QGridLayout() 
             self.gdbOutputLayout = QVBoxLayout()
             #self.labelsLayout = QVBoxLayout() 
-            self.w1 = CodeWindow()
+            self.w1 = self.CodeWindow()
             self.w2 = self.WindowTwo()
             self.setWindowTitle(f"multiple Windows")
             codeWindowButton = QPushButton("Show/Hide Code Window")
+            pprintButton = QPushButton("run pprint")
+            pstackButton = QPushButton("print Stack Registers")
+            pvarsButton = QPushButton("print variables")
+            pfuncButton = QPushButton("print functions")
+            pmapButton = QPushButton("Print stack/heap range")
+            pstatButton = QPushButton("Print info from /proc/$pid/stat")
+            
+            pprintButton.clicked.connect((lambda: self.runCommand("pprint")))
+            pstackButton.clicked.connect((lambda: self.runCommand("pstack")))
+            pvarsButton.clicked.connect((lambda: self.runCommand("pvar")))
+            pfuncButton.clicked.connect((lambda: self.runCommand("pfunc")))
+            pmapButton.clicked.connect((lambda: self.runCommand("pmap")))
+            pstatButton.clicked.connect((lambda: self.runCommand("pstat")))
+
+
+            #pvars pfunc pmap pstat pstack 
+            #also radio button
             button2 = QPushButton("button 2")
             helpButton =QPushButton("Help")
             self.gdbInput = QLineEdit()
@@ -1059,10 +1083,29 @@ class Program:
             
             self.buttonsLayout.addWidget(button2,alignment=align)
             self.buttonsLayout.addWidget(helpButton,alignment=align)
-            self.buttonsLayout.addWidget(QLabel(""))
+            self.buttonsLayout.addWidget(pprintButton)
+            
+
+            self.buttonsLayout2 = QHBoxLayout()
+            self.buttonsLayout2.addWidget(pstackButton)
+            self.buttonsLayout2.addWidget(pvarsButton)
+            self.buttonsLayout2.addWidget(pfuncButton)
+            self.buttonsLayout2.addWidget(QLabel(""))
+
+            self.buttonsLayout3 = QHBoxLayout()
+            self.buttonsLayout3.addWidget(pmapButton)
+            self.buttonsLayout3.addWidget(pstatButton)
+            self.buttonsLayout3.addWidget(QLabel(""))
+
+            self.commandList = ['pfuncs','pmaps','pprint','pstack','pstat', 'pvars']
             self.outerLayout.addLayout(self.buttonsLayout)
+            self.outerLayout.addLayout(self.buttonsLayout2)
+            self.outerLayout.addLayout(self.buttonsLayout3)
             self.outerLayout.addWidget(self.gdbInput)
-            self.outerLayout.addLayout(self.labelsLayout)
+            self.testLayout = QVBoxLayout()
+            self.testLayout.addLayout(self.labelsLayout)
+            #self.outerLayout.addLayout(self.labelsLayout)
+            self.outerLayout.addLayout(self.testLayout)
             #i dunno about this one 
             
             self.gdbOutputText = QLabel("output from gdb commands will populate here.")
@@ -1078,8 +1121,12 @@ class Program:
             
             #self.setCentralWidget(widget)
             #generate the help dialogue box, basically will list commands and what they do (pprint docstring more or less)
+        def runCommand(self, cmd):
+            print("executing: ",cmd)
+            gdb.execute(cmd) 
             
         def changeCentralLabels(self,text,givenColors=0,givenHeader=0):
+            print(f"changing central labels given colors: {givenColors} given headder {givenHeader}")
             tmplist = [""]*len(text[0])
             text.append(tmplist)
             zlist= list(zip(*text))
@@ -1089,8 +1136,40 @@ class Program:
             num_needed=len(text[0])*4
             #print(f"i should need:{num_needed} l-zlist: {len(zlist[0])}")
             if(givenColors):
-                #num_needed=len(text[0])*4
+                print("THIS ONE IS GIVEN COLOR")
                 self.setNumLabels(num_needed)
+                count = 0
+                
+                #print(f"i should need:{num_needed} l-zlist: {len(zlist)}")
+
+                #i might need to send this to a function that gets a color for a type of thing
+                #basically [0] is a name so that color should test to see if its a function (in the name of functions)
+                #etc. though i really dont like that. i can just do this by skipping the 3rd index
+                for i in range(len(zlist)):
+                    for j in range(len(zlist[i])):
+                        if(givenHeader):
+                            if(i==0 and j==0):
+                                count=count+1
+                        if j == 3:
+                            pass
+                            
+                        else:
+                            color = zlist[i][3]
+                            #change colors to something manageable 
+                            if color == 'white':
+                                color = 'black'
+                            if color == 'yellow':
+                                color = '#ff9900'
+                            #eg white is never a thing!!!
+                            itemWidget = self.labelsLayout.itemAt(count).widget()
+                            #itemWidget.setText(f"i: {i} j: {j} {zlist[i][j]}")
+                            #itemWidget.setStyleSheet("border: 1px solid black;")
+                            
+                            outText = f"<html><font color={color}>{zlist[i][j]}</font></html>"
+                            print("~~~~~OUTTEXT~~~~~~~",outText)
+                            itemWidget.setText(outText)
+                            count=count+1
+
             else:
                 #num_needed=len(text[0])*4
                 self.setNumLabels(num_needed)
@@ -1105,6 +1184,7 @@ class Program:
                     
                         itemWidget = self.labelsLayout.itemAt(count).widget()
                         #itemWidget.setText(f"i: {i} j: {j} {zlist[i][j]}")
+                        #itemWidget.setStyleSheet("border: 1px solid black;")
                         itemWidget.setText(zlist[i][j])
                         count=count+1    
                         
@@ -1134,23 +1214,62 @@ class Program:
             text = self.gdbInput.text()
             print(text)    
             self.gdbInput.setText("")
-            #self.gdbOutputText.setText(text)
-            gdb.execute(text)
-            # try:
-            #     #out = gdb.execute(text,to_string=True)
+            #user definitely ran a command not in this file
+            if text =="":
+                self.gdbOutputText.setText("please enter a command.")
+                return
+            if(text[0]!='p'):
+                try:
+                    out = gdb.execute(text,to_string=True)
+                    self.gdbOutputText.setText(out)
+                    self.w1.setCodeText()
+                    self.w1.setNumberLabels()
+                except gdb.error as e:
+                    self.gdbOutputText.setText(str(e))
+                    self.w1.setCodeText()
+                    self.w1.setNumberLabels()    
+            else:    
+                matches = [match for match in self.commandList if text in match]
+                print(matches)
+                if(len(matches)>0):
+                    self.gdbOutputText.setText("")
+                    gdb.execute(text)
+                    cw.setCodeText()
+                    cw.setNumberLabels()
+                    return
+                #user ran a gdb command that was not in this program
+                else:
+                    try:
+                        out = gdb.execute(text,to_string=True)
+                        self.gdbOutputText.setText(out)
+                        self.w1.setCodeText()
+                        self.w1.setNumberLabels()
+                    except gdb.error as e:
+                        self.gdbOutputText.setText(str(e))
+                        self.w1.setCodeText()
+                        self.w1.setNumberLabels()
+                        
+                    return
+            
+            # #self.gdbOutputText.setText(text)
+            # gdb.execute(text)
+            # # try:
+            # #     #out = gdb.execute(text,to_string=True)
                
-            #     #gdb.execute(text,to_string=True)
-            #     #self.gdbOutputText.setText(out)
-            # except gdb.error as e:
-            #     #self.gdbOutputText.setText(str(e))
-            #     pass
-            cw.setCodeText()
-            cw.setNumberLabels()
+            # #     #gdb.execute(text,to_string=True)
+            # #     #self.gdbOutputText.setText(out)
+            # # except gdb.error as e:
+            # #     #self.gdbOutputText.setText(str(e))
+            # #     pass
+            # cw.setCodeText()
+            # cw.setNumberLabels()
         def helpButtonClicked(self):
             dlg = self.HelpDialogue()
             dlg.exec()
         def codeWindowButtonClicked(self):
             print("Code Window clicked")
+            self.w1.setCodeText()
+            self.w1.setNumberLabels()
             if self.w1.isVisible():
                 self.w1.hide()
             else:
@@ -1238,11 +1357,10 @@ class Program:
                 self.layout.addWidget(label3,0,3)
                 self.layout.addWidget(label2,0,2)
                 self.layout.addWidget(label,0,1)
+        class CodeWindow(QMainWindow):
 
-class CodeWindow(QMainWindow):
-
-        def __init__(self):
-            super().__init__()
+            def __init__(self):
+                super().__init__()
 
             
                 #styles ['default', 'emacs', 'friendly', 'friendly_grayscale', 'colorful', 'autumn', 
@@ -1252,185 +1370,199 @@ class CodeWindow(QMainWindow):
                 # 'rainbow_dash', 'abap', 'solarized-dark', 'solarized-light', 'sas', 'stata', 
                 # 'stata-light', 'stata-dark', 'inkpot', 'zenburn', 'gruvbox-dark', 'gruvbox-light', 
                 # 'dracula', 'one-dark', 'lilypond']
-            
-            
-            self.getProgramFilePathForWindow()
-            self.setWindowTitle(f"{self.localfilepath} Code Window")
-            self.layout = QGridLayout() 
-            self.label1 = QLabel("")
-            self.label2 = QLabel("")  
-            self.setCodeText()
-            self.setNumberLabels()
-            self.layout.addWidget(self.label1,0,0)
-            self.layout.addWidget(self.label2,0,1)
-        
-            widget = QWidget()
-            widget.setLayout(self.layout)
-            self.setCentralWidget(widget)
-            #print(self.label1.text())
-            #print(self.label2.text())
-        def setCodeText(self):
-            s = 'vs'
-            with open(self.filepath,'r') as f:
-                code = f.read()
-            lexer = CLexer() 
-            
-            formatter = HtmlFormatter(style=s)
-            result = highlight(code, lexer, formatter)
-            #print(result)
-            css = formatter.get_style_defs()
-            text2 = [] 
-            lines = css.splitlines()
-            classesList = []
-            colorsList = []
-            for line in lines:
-        #if i > 5:
-                color = "<font"
-                m = re.split("{|}",line)
-                #print(line)
-                #print(m[0][1:])
-                #print(m[1], m[1][1])
-                if(m[1][1]=='f'):
-                    colorsList.append("")
-                else:
-                    cout = re.sub(': ',"=",m[1])
-                    color = color+ cout[:-1] +">"
-                    colorsList.append(color)
-                classesList.append(m[0][1:])
-                #i = i + 1
-            classesList.append("w")
-            colorsList.append("<font color=#000000>")
-            notFirstRun = False
-            for c,color in zip(classesList,colorsList):
-                if notFirstRun:
-                    result = res3
-                #c = classesList[i]
-                #color = colorsList[i]
-                #print(f"class and color : {c[:-1]}, {color}")    
-                res = re.sub(f"""<span class="{c[:-1]}">""",color,result)
-                res2 = re.sub("</span>","</font>",res)
-                notFirstRun = True
-                #print(res2)
-                #print(i)
-                res3 = res2
-                #res3 = re.sub("""<span class="w"> +<\/font>""","""  """,res2)
-                #res4 = re.sub(f"""<span class="n">""","xxxxxxxxxxx<font>",res3)
                 
-            for line in res3.splitlines():
-                label = QLabel("")
-                label.setText("\n")
-                text2.append(label)
-                #print(line)
-            self.label2.setText(res3)
-            self.numCodeLines = len(res3.splitlines())
-            #self.layout.addWidget(label2,1,1)
-            
-            #print(t)
-            #print(self.label1.text())     
-            #print(bst)
-        def getBreakpoints(self):
-            print("get breakpoints called")
-            breakpointRegex = "\d+$"
-            out = gdb.execute('info breakpoints',to_string = True)
-            lines = out.splitlines()
-            print(out)
-            print(lines)
-            bps = []
-            for line in lines:
-                #print(f"examining {line}")
-                try:
-                    #re.findall()
-                    m = re.search(breakpointRegex,line)
-                #    print("M is:",m.group(0))
-                    bps.append(m.group(0))
-                except:
-                    #print('exception in getBreakPoints')
-                    pass
                 
-                    a = 0
-            #print("all breakpoints ", bps)
-            uniqueBps = [*set(bps)]
-            uniqueBps.sort(key = int)
-            #print("unique bps: ",uniqueBps)
-            #print(f"returning {uniqueBps} from getbreakpoints")
-            return uniqueBps
-
-        #there is a delay in this function have to hit enter twice to update things for some reason    
-        def setNumberLabels(self):
-            print("setting number labels")
-            breaknums = self.getBreakpoints()
-        
-            bst = ""
-            currentLine = self.getCurrentLine()
-            for i in range(self.numCodeLines):
-                match = False
-                for b in breaknums:
-
-                    if(i == int(b) and i == int(currentLine)):
-                    #if(i == 14):
-                        bst = bst + f"B: {i}-->\n"
-                        match = True
-                        break
-                    elif(i == int(currentLine)):
-                        bst = bst+ f"{i}-->\n"
-                        match = True
-                        break
-                    elif(i == int(b)):
-                        bst = bst+ f"B: {i}\n"
-                        match = True
-                        break
-
-                if(match):    
-                    pass
-                else:
-                    bst=bst+f"{i}\n"
-
-            self.label1.setText(bst)   
-            t = self.label1.text()    
-        def getCurrentLine(self):
-            if(gdb.selected_inferior().pid):
-                out = gdb.execute("frame",to_string = True)
-                print(out)
+                self.getProgramFilePathForWindow()
+                self.setWindowTitle(f"{self.localfilepath} Code Window")
+                self.layout = QGridLayout() 
+                self.label1 = QLabel("")
+                self.label2 = QLabel("")  
+                self.setCodeText()
+                self.setNumberLabels()
+                self.layout.addWidget(self.label1,0,0)
+                self.layout.addWidget(self.label2,0,1)
+            
+                widget = QWidget()
+                widget.setLayout(self.layout)
+                self.setCentralWidget(widget)
+                #print(self.label1.text())
+                #print(self.label2.text())
+            def setCodeText(self):
+                s = 'vs'
+                with open(self.filepath,'r') as f:
+                    code = f.read()
+                lexer = CLexer() 
+                
+                formatter = HtmlFormatter(style=s)
+                result = highlight(code, lexer, formatter)
+                #print(result)
+                css = formatter.get_style_defs()
+                text2 = [] 
+                lines = css.splitlines()
+                classesList = []
+                colorsList = []
+                for line in lines:
+            #if i > 5:
+                    color = "<font"
+                    m = re.split("{|}",line)
+                    #print(line)
+                    #print(m[0][1:])
+                    #print(m[1], m[1][1])
+                    if(m[1][1]=='f'):
+                        colorsList.append("")
+                    else:
+                        cout = re.sub(': ',"=",m[1])
+                        color = color+ cout[:-1] +">"
+                        colorsList.append(color)
+                    classesList.append(m[0][1:])
+                    #i = i + 1
+                classesList.append("w")
+                colorsList.append("<font color=#000000>")
+                notFirstRun = False
+                for c,color in zip(classesList,colorsList):
+                    if notFirstRun:
+                        result = res3
+                    #c = classesList[i]
+                    #color = colorsList[i]
+                    #print(f"class and color : {c[:-1]}, {color}")    
+                    res = re.sub(f"""<span class="{c[:-1]}">""",color,result)
+                    res2 = re.sub("</span>","</font>",res)
+                    notFirstRun = True
+                    #print(res2)
+                    #print(i)
+                    res3 = res2
+                    #res3 = re.sub("""<span class="w"> +<\/font>""","""  """,res2)
+                    #res4 = re.sub(f"""<span class="n">""","xxxxxxxxxxx<font>",res3)
+                    
+                for line in res3.splitlines():
+                    label = QLabel("")
+                    label.setText("\n")
+                    text2.append(label)
+                    #print(line)
+                self.label2.setText(res3)
+                self.numCodeLines = len(res3.splitlines())
+                #self.layout.addWidget(label2,1,1)
+                
+                #print(t)
+                #print(self.label1.text())     
+                #print(bst)
+            def getBreakpoints(self):
+                print("get breakpoints called")
+                breakpointRegex = "\d+$"
+                out = gdb.execute('info breakpoints',to_string = True)
                 lines = out.splitlines()
-                m = re.search("^\d+", lines[1])
-                try:
-                    numString = m.group(0)#[1:-1]
-                    numInt = int(numString)
-                except:
-                    numString = 0
-                    print("error in getCurrentLine")
-                    pass
-            else:
-                numString = 0    
-            return numString
-        def getProgramFilePathForWindow(self):
-            line = gdb.execute('info file', to_string = True)
-            fpre = "`\/home\/.+'"
-            try:
-                m = re.search(fpre,line)
-                self.filepath = m.group(0)[1:-1]
-                self.executable = self.filepath
-                self.filepath = self.filepath+".c"
-            except:
-                self.filepath = "unknown.c"
-                self.executable = "unknown"
-                pass
-                
-            localfilepath = self.executable
-            try:
-                m = re.search("\w+$",localfilepath)
-                localfilepath = m.group(0)
-                
-            except:
-                localfilepath = "unknown.c"
-                pass
-            if(self.filepath == "unknown.c" or localfilepath == "unknown.c"):
-                print("cannot parse this file, is it named correctly?")  
-                return  
-            self.localexecutable = localfilepath
-            self.localfilepath = localfilepath+".c"
-            print(self.filepath)    
+                print(out)
+                print(lines)
+                bps = []
+                for line in lines:
+                    #print(f"examining {line}")
+                    try:
+                        #re.findall()
+                        m = re.search(breakpointRegex,line)
+                    #    print("M is:",m.group(0))
+                        bps.append(m.group(0))
+                    except:
+                        #print('exception in getBreakPoints')
+                        pass
+                    
+                        a = 0
+                #print("all breakpoints ", bps)
+                uniqueBps = [*set(bps)]
+                uniqueBps.sort(key = int)
+                #print("unique bps: ",uniqueBps)
+                print(f"returning {uniqueBps} from getbreakpoints")
+                return uniqueBps
 
+            #there is a delay in this function have to hit enter twice to update things for some reason    
+            def setNumberLabels(self):
+                print("setting number labels")
+                breakpoints = self.getBreakpoints()
+            
+                bst = ""
+                currentLine = self.getCurrentLine()
+                #print(type(breakpoints),breakpoints, type(currentLine),currentLine)
+                outArr = []
+                for i in range(self.numCodeLines):
+                    outArr.append(i)
+                #print(outArr)    
+                for i in range(len(outArr)):
+                    innerFound = False
+                    for b in breakpoints:
+                        
+                        if(b == str(i) and str(i)==currentLine):
+                            outArr[i] = "ba"
+                            innerFound =True
+                            break #continue?
+                        elif(b == str(i)):
+                            outArr[i] = 'b'
+                            innerFound =True
+                            break
+                    if(not innerFound):
+                        if(str(i)==currentLine):
+                            outArr[i] = "a"
+                outst = ""
+                for i in range(len(outArr)):
+                    if str(outArr[i]) =='ba':
+                        outst = outst + "-->B:"+str(i)+"\n"
+                        
+                    elif str(outArr[i]) == 'a':
+                        outst = outst + "-->"+str(i)+"\n"
+                        
+                    elif str(outArr[i]) == 'b':
+                        outst = outst + "B:"+str(i)+"\n"
+                        
+                    else:
+                        outst = outst + str(i)+"\n"
+                #print(outst)
+                self.label1.setText(outst)
+                #self.label1.setText(bst)   
+                t = self.label1.text()  
+
+            def getCurrentLine(self):
+                if(gdb.selected_inferior().pid):
+                    out = gdb.execute("frame",to_string = True)
+                    print(out)
+                    lines = out.splitlines()
+                    m = re.search("^\d+", lines[1])
+                    try:
+                        numString = m.group(0)#[1:-1]
+                        numInt = int(numString)
+                    except:
+                        numString = 0
+                        print("error in getCurrentLine")
+                        pass
+                else:
+                    numString = 0    
+                return numString
+            def getProgramFilePathForWindow(self):
+                line = gdb.execute('info file', to_string = True)
+                fpre = "`\/home\/.+'"
+                try:
+                    m = re.search(fpre,line)
+                    self.filepath = m.group(0)[1:-1]
+                    self.executable = self.filepath
+                    self.filepath = self.filepath+".c"
+                except:
+                    self.filepath = "unknown.c"
+                    self.executable = "unknown"
+                    pass
+                    
+                localfilepath = self.executable
+                try:
+                    m = re.search("\w+$",localfilepath)
+                    localfilepath = m.group(0)
+                    
+                except:
+                    localfilepath = "unknown.c"
+                    pass
+                if(self.filepath == "unknown.c" or localfilepath == "unknown.c"):
+                    print("cannot parse this file, is it named correctly?")  
+                    return  
+                self.localexecutable = localfilepath
+                self.localfilepath = localfilepath+".c"
+                print(self.filepath)    
+
+print("after program")
 #print(result)
 class pwindow (gdb.Command):
     """reload this file, with changes"""
@@ -1475,7 +1607,8 @@ class pstack (gdb.Command):
                 if(myProgramWindow.isVisible() and argString[0] != 'from_pprint'):
                     myProgramStack.stackRegisterNames.insert(0,"register")
                     myProgramStack.stackRegisterAddresses.insert(0,"address")
-                    myProgramWindow.changeCentralLabels([myProgramStack.stackRegisterNames,myProgramStack.stackRegisterAddresses,pair])    
+                    myProgramWindow.changeCentralLabels([myProgramStack.stackRegisterNames,myProgramStack.stackRegisterAddresses,pair])
+                    #myProgramWindow.changeCentralLabels([myProgramStack.stackRegisterNames,myProgramStack.stackRegisterAddresses,pair],1)    
                 #pair.insert(0,"pointed to")
                 #print(myProgramVariables.variableInfo)
                 
@@ -1564,7 +1697,7 @@ pfuncs()
 #####~~~~~MAIN~~~~~#####
 #declare objects so this file can start collecting information
 #define like this for ease of use later
-global myProgram
+# global myProgram
 myProgram = Program()
 myProgramStack = myProgram.programStack
 myProgramHeap = myProgram.programHeap
@@ -1619,60 +1752,61 @@ class pstat (gdb.Command):
     #this is what happens when they type in the command     
     def invoke(self, arg, from_tty):
         #current project make this flow better. 
-        if(not myProgram.window.isVisible()):
-            print("invoking pstat")
-            
-        else:
-            myProgram.getThingsFromStat()
-            
-            
-            #sort the list by address
-            for i in range(len(myProgram.statHexInfo)):
-                for j in range(len(myProgram.statHexInfo)):
-                    if int(myProgram.statHexInfo[i],16) < int(myProgram.statHexInfo[j],16):
-                        #print("is true")
-                        tmpaddr = myProgram.statHexInfo[i]
-                        myProgram.statHexInfo[i] = myProgram.statHexInfo[j]
-                        myProgram.statHexInfo[j] = tmpaddr
-                        tmpname = myProgram.statWhatInfo[i]
-                        myProgram.statWhatInfo[i] = myProgram.statWhatInfo[j]
-                        myProgram.statWhatInfo[j] = tmpname            
-            
-            #from pprint bug here
-            argString = arg.strip('').split('-')
-            if(myProgramWindow.isVisible() and argString[0] != 'from_pprint'):
-                myProgram.statWhatInfo.insert(0,"info") 
-                myProgram.statHexInfo.insert(0,"address")  
-              
-            #add the 2 lists to the gui
-                count = 0
-                if(0):
-                    myProgramWindow.setNumLabels(len(myProgram.statWhatInfo)*4)
-                    for i in range(len(myProgram.statWhatInfo)):
-                        for j in range(4):
-                            if j ==0:
-                                
-                                nameWidget = myProgramWindow.labelsLayout.itemAt(count).widget()
-                                nameWidget.setText(myProgram.statWhatInfo[i])
-                                
-                            elif j ==1:
-                                
-                                addrWidget = myProgramWindow.labelsLayout.itemAt(count).widget()
-                                addrWidget.setText(myProgram.statHexInfo[i])    
-                                
-                            else:    
-                                
-                                blankWidget = myProgramWindow.labelsLayout.itemAt(count).widget()
-                                blankWidget.setText("")        
-                            
-                            count=count+1
-            
-            # for w in myProgram.statWhatInfo:
-            #     print(w)
-           
-        if(from_tty):
-            myProgram.getThingsFromStat()
+        print("invoking pstat")
+        myProgram.getThingsFromStat()
+        #from tty is user terminal
+        if(from_tty and not myProgramWindow.isVisible()):
+            #print("from tty true and not visible returning")
             myProgram.printStatInfo()
+            return
+        #if myProgramWindow.isVisible():    
+        
+        #sort the list by address
+        for i in range(len(myProgram.statHexInfo)):
+            for j in range(len(myProgram.statHexInfo)):
+                if int(myProgram.statHexInfo[i],16) < int(myProgram.statHexInfo[j],16):
+                    #print("is true")
+                    tmpaddr = myProgram.statHexInfo[i]
+                    myProgram.statHexInfo[i] = myProgram.statHexInfo[j]
+                    myProgram.statHexInfo[j] = tmpaddr
+                    tmpname = myProgram.statWhatInfo[i]
+                    myProgram.statWhatInfo[i] = myProgram.statWhatInfo[j]
+                    myProgram.statWhatInfo[j] = tmpname            
+        
+        
+        argString = arg.strip('').split('-')
+        if(myProgramWindow.isVisible() and argString[0] != 'from_pprint'):
+            #print("window is visibable and its not from pprint")
+            myProgram.statWhatInfo.insert(0,"info") 
+            myProgram.statHexInfo.insert(0,"address")  
+            
+        #add the 2 lists to the gui
+            count = 0
+            if(1):
+                myProgramWindow.setNumLabels(len(myProgram.statWhatInfo)*4)
+                for i in range(len(myProgram.statWhatInfo)):
+                    for j in range(4):
+                        if j ==0:
+                            
+                            nameWidget = myProgramWindow.labelsLayout.itemAt(count).widget()
+                            nameWidget.setText(myProgram.statWhatInfo[i])
+                            
+                        elif j ==1:
+                            
+                            addrWidget = myProgramWindow.labelsLayout.itemAt(count).widget()
+                            addrWidget.setText(myProgram.statHexInfo[i])    
+                            
+                        else:    
+                            
+                            blankWidget = myProgramWindow.labelsLayout.itemAt(count).widget()
+                            blankWidget.setText("")        
+                        
+                        count=count+1
+        
+        # for w in myProgram.statWhatInfo:
+        #     print(w)
+           
+        
 pstat() 
 
 #gdb command to print information from the maps file 
@@ -1694,7 +1828,7 @@ class pmaps (gdb.Command):
             s = f'stack: {myProgram.mapStackTop } - {myProgram.mapStackBottom }\n'
             
             if(myProgramWindow.isVisible() and argString[0] != 'from_pprint'):
-                myProgramWindow.setNumLabels(1)
+                myProgramWindow.setNumLabels(4)
                 myProgramWindow.labelsLayout.itemAt(0).widget().setMaximumWidth(500)
                 #part visual bug here <<RET TODO>>
                 myProgramWindow.labelsLayout.itemAt(0).widget().setText(h+s)
@@ -1717,15 +1851,15 @@ class pprint (gdb.Command):
             simple mode: 
             <complex/full> mode: 
         'pfunc'
-            uilder mode: 
+            builder mode: 
             simple mode: 
             <complex/full> mode:
         'pmap'
-            uilder mode: 
+            builder mode: 
             simple mode: 
             <complex/full> mode:
-        'pstat'
-            uilder mode: 
+        'pstat' 
+            builder mode: 
             simple mode: 
             <complex/full> mode:
         'pstack'
@@ -1930,8 +2064,12 @@ class pprint (gdb.Command):
         sortedNames, sortedAddrs, sortedColors, sortedData = sortTheBigList(bigListNames,bigListAddrs,bigListColors,bigListData)
         if(myProgram.window.isVisible()):
             #printPairNoColor(bigListNames,bigListAddrs,bigListData)
-            myProgram.window.changeCentralLabels([bigListNames,bigListAddrs,bigListData])
-            #myProgram.window.gdbWindow.updateGDBLabelText([sortedNames,sortedAddrs,sortedColors,sortedData],1)
+            #myProgram.window.changeCentralLabels([bigListNames,bigListAddrs,bigListData])
+            myProgram.window.changeCentralLabels([sortedNames,sortedAddrs,sortedData,sortedColors],1)
+       
+            #print(sortedNames,sortedAddrs,sortedData)
+           # print(bigListNames,bigListAddrs,bigListData)
+        #myProgram.window.gdbWindow.updateGDBLabelText([sortedNames,sortedAddrs,sortedColors,sortedData],1)
             #<<TODO>>
             #the window is visible here, so lets display the contents there
             #<<rethere>>
@@ -2069,4 +2207,22 @@ class tcmd (gdb.Command):
         #gdb.execute("source test.py")
         print("test print completed")
 resource() 
-gdb.execute("tcmd")
+
+
+            #if obj.__class__ == pqt6:
+                #print("something pyqt6")
+            #print(name)
+
+
+# #this MUST be the very last thing in this file
+
+# import inspect
+# def getAllClasses():
+#     classList = []
+#     for name, obj in inspect.getmembers(sys.modules[__name__]):
+#             if inspect.isclass(obj):
+#                 if name[0] != 'Q' and name[0:4] != 'pyqt':
+#                     print(name)
+#                     classList.append(name)            
+#     return classList              
+# getAllClasses()    
