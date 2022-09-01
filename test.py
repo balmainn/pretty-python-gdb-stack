@@ -726,14 +726,14 @@ print("before program")
 class Program:
 
     def __init__(self):   
-        print("inside program")
+        
         #programs have a stack, a heap, functions, and variables.
         self.programStack = Stack()
         self.programHeap = Heap()
         self.programFuncs = Func()
         self.programVariables = Variables()
         self.app = QApplication(sys.argv)
-        print("after sysargv")
+        
         
         self.window = self.MainWindow()
         self.codeWindow = self.window.w1
@@ -1026,6 +1026,7 @@ class Program:
             pstackButton = QPushButton("print Stack Registers")
             pvarsButton = QPushButton("print variables")
             pfuncButton = QPushButton("print functions")
+            gdbNextButton = QPushButton("next")
             pmapButton = QPushButton("Print stack/heap range")
             pstatButton = QPushButton("Print info from /proc/$pid/stat")
             
@@ -1035,6 +1036,7 @@ class Program:
             pfuncButton.clicked.connect((lambda: self.runCommand("pfunc")))
             pmapButton.clicked.connect((lambda: self.runCommand("pmap")))
             pstatButton.clicked.connect((lambda: self.runCommand("pstat")))
+            gdbNextButton.clicked.connect(self.gdbNext)
 
 
             #pvars pfunc pmap pstat pstack 
@@ -1090,14 +1092,37 @@ class Program:
             self.buttonsLayout2.addWidget(pstackButton)
             self.buttonsLayout2.addWidget(pvarsButton)
             self.buttonsLayout2.addWidget(pfuncButton)
-            self.buttonsLayout2.addWidget(QLabel(""))
+            self.buttonsLayout2.addWidget(gdbNextButton)
 
             self.buttonsLayout3 = QHBoxLayout()
             self.buttonsLayout3.addWidget(pmapButton)
             self.buttonsLayout3.addWidget(pstatButton)
             self.buttonsLayout3.addWidget(QLabel(""))
 
+            self.checkBoxLayout = QHBoxLayout()
+            self.modeCheckBox = QCheckBox("complex")
+            self.addRegistersCheckBox = QCheckBox("add registers")
+            self.addVarsCheckBox = QCheckBox("add Variables")
+            self.addFunctionsCheckBox = QCheckBox("add functions")
+            #add pmaps/pstat boxes?
+            self.addRegistersCheckBox.toggled.connect(self.itemSelected)
+            self.addVarsCheckBox.toggled.connect(self.itemSelected)
+            self.addFunctionsCheckBox.toggled.connect(self.itemSelected)
+            self.modeCheckBox.clicked.connect(self.modeCheck)
+
+            self.addRegistersCheckBox.setChecked(True)
+            self.addVarsCheckBox.setChecked(True)
+            self.addFunctionsCheckBox.setChecked(True)
+
+            self.checkBoxLayout.addWidget(self.modeCheckBox)
+            self.checkBoxLayout.addWidget(self.addRegistersCheckBox)
+            self.checkBoxLayout.addWidget(self.addVarsCheckBox)
+            self.checkBoxLayout.addWidget(self.addFunctionsCheckBox)
+            
+            #self.modeCheckBox.clicked.connect()
+
             self.commandList = ['pfuncs','pmaps','pprint','pstack','pstat', 'pvars']
+            self.outerLayout.addLayout(self.checkBoxLayout)
             self.outerLayout.addLayout(self.buttonsLayout)
             self.outerLayout.addLayout(self.buttonsLayout2)
             self.outerLayout.addLayout(self.buttonsLayout3)
@@ -1121,6 +1146,38 @@ class Program:
             
             #self.setCentralWidget(widget)
             #generate the help dialogue box, basically will list commands and what they do (pprint docstring more or less)
+        def gdbNext(self):
+            gdb.execute('n')
+            self.w1.setCodeText()
+            self.w1.setNumberLabels()
+
+        #mostly used for dbug    
+        def itemSelected(self):
+            value = ""
+            if self.addRegistersCheckBox.isChecked():
+                value=value+"r"
+            if self.addVarsCheckBox.isChecked():
+                value=value+"v"
+            if self.addFunctionsCheckBox.isChecked():
+                value=value+"f"    
+            print(value)
+            self.optionsSelected = value
+            return value      
+            
+        # def testFunc(self):
+        #     pprintOptions = window.optionsSelected
+        #     if pprintOptions.find('r') != -1:
+        #         print("registers to pprint")          
+        #     if pprintOptions.find('v') != -1:
+        #         print("variables to pprint")          
+        #     if pprintOptions.find('f') != -1:
+        #         print("functions to pprint")  
+        
+        
+        def modeCheck(self):
+            #print("modecheck first:", self.modeCheckBox.isChecked())
+            gdb.execute("pchangemode")
+            #print("modecheck after pcm:", self.modeCheckBox.isChecked())
         def runCommand(self, cmd):
             print("executing: ",cmd)
             gdb.execute(cmd) 
@@ -1251,21 +1308,11 @@ class Program:
                         
                     return
             
-            # #self.gdbOutputText.setText(text)
-            # gdb.execute(text)
-            # # try:
-            # #     #out = gdb.execute(text,to_string=True)
-               
-            # #     #gdb.execute(text,to_string=True)
-            # #     #self.gdbOutputText.setText(out)
-            # # except gdb.error as e:
-            # #     #self.gdbOutputText.setText(str(e))
-            # #     pass
-            # cw.setCodeText()
-            # cw.setNumberLabels()
+           
         def helpButtonClicked(self):
             dlg = self.HelpDialogue()
             dlg.exec()
+
         def codeWindowButtonClicked(self):
             print("Code Window clicked")
             self.w1.setCodeText()
@@ -1845,30 +1892,36 @@ class pprint (gdb.Command):
     <copy paste information for all functions here>  gdb.execute('pfunc')
     supported commands:
         'pvars'
-        prints contents of the stack at the current line in the program. 
-            
-            Builder mode: 
-            simple mode: 
-            <complex/full> mode: 
+            Prints variables, their contents, and location on the stack
+    
         'pfunc'
-            builder mode: 
-            simple mode: 
-            <complex/full> mode:
+            Prints functions and their location on the stack
+            
         'pmap'
-            builder mode: 
-            simple mode: 
-            <complex/full> mode:
+            Prints information from /proc/$PID/maps
+
         'pstat' 
-            builder mode: 
-            simple mode: 
-            <complex/full> mode:
+            Prints information from /proc/$PID/stat
+
         'pstack'
             prints contents of the stack at the current line in the program. 
             
-            Builder mode: add and print stack 
-            simple mode: print most important stack information 
-            <complex/full> mode: print all stack information
-        'changecolor' type color
+        'pprint'
+            print all stack information and display with the current mode 
+                default mode: 
+                    print all simple information. certain information from /proc/$pid/stat and /maps has been left out for simplicity.
+                complex mode:
+                    print everything, Yes Everything.
+                [not implamented]    
+                    <Debug mode>: print debug information (lots of terminal output helpful trace information in finding problems with the program )
+        'pauto'
+            Prints stack information for each line in the code reachable by gdb "n."
+                displays this information in the created file "all_stacks.txt" 
+        'pas'
+            print all stacks
+                print stack information for each time pprint was called.         
+        [not implamented at this time]  
+        'pchangecolor' type color
             type: var, func, special, regs
                 var: changes variable color (default: << color here >>)
                 func: changes functions colors (default: << color here >>)
@@ -1876,14 +1929,7 @@ class pprint (gdb.Command):
                 special: changes the special registers colors ('eip', 'edx', 'edi', 'saved_ebp')
             supported colors: https://pypi.org/project/termcolor/
 
-        pprint: print all information and display with the current mode 
-            builder mode: 
-                print all information that has been "built"
-            simple mode: 
-                print all simple information
-            <complex/full> mode:
-                print everything, Yes Everything. You have been warned. 
-            <Debug mode>: print debug information (lots of terminal output helpful trace information in finding problems with the program )    
+            
     """
     def __init__(self):
                                  #cmd user types in goeshere
@@ -1891,9 +1937,9 @@ class pprint (gdb.Command):
     #this is what happens when they type in the command     
     def invoke(self, arg, from_tty):
         #need flag for all, gui, ...tui?
-        if(myProgram.mode =='complex'):
-            builderPrint()
-            return
+        # if(myProgram.mode =='complex'):
+        #     builderPrint()
+        #     return
         #need add extranious things like data and stuff
         bigListNames = []
         bigListAddrs = []
@@ -1941,36 +1987,39 @@ class pprint (gdb.Command):
         #automated stuff 
         #stack registers
         #stack registers is not apending the color properly when changing
-        special_registers = ['eip', 'edx', 'edi', 'saved_ebp'] #double check these 
-        for i in range(len(myProgramStack.stackRegisterNames)):
-            bigListNames.append(myProgramStack.stackRegisterNames[i])
-            bigListAddrs.append(myProgramStack.stackRegisterAddresses[i])
-            found = 0
-            for specReg in special_registers:
-                
-                if(myProgramStack.stackRegisterNames[i] == specReg):
-                    bigListColors.append(myProgram.specialRegisterColor)
-                    found = 1
-            if(not found):    
-                bigListColors.append(myProgram.regColor)
+        if myProgramWindow.addRegistersCheckBox.isChecked() or not myProgramWindow.isVisible():
+            special_registers = ['eip', 'edx', 'edi', 'saved_ebp'] #double check these 
+            for i in range(len(myProgramStack.stackRegisterNames)):
+                bigListNames.append(myProgramStack.stackRegisterNames[i])
+                bigListAddrs.append(myProgramStack.stackRegisterAddresses[i])
+                found = 0
+                for specReg in special_registers:
+                    
+                    if(myProgramStack.stackRegisterNames[i] == specReg):
+                        bigListColors.append(myProgram.specialRegisterColor)
+                        found = 1
+                if(not found):    
+                    bigListColors.append(myProgram.regColor)
         if(not myProgram.window.isVisible()):        
             print("appended stack registers")    
 
         #functions
-        for i in range(len(myProgramFunctions.functionsName)):
-            bigListNames.append(myProgramFunctions.functionsName[i])
-            bigListAddrs.append(myProgramFunctions.functionsAddr[i])
-            bigListColors.append(myProgram.funcColor)
+        if myProgramWindow.addFunctionsCheckBox.isChecked() or not myProgramWindow.isVisible():
+            for i in range(len(myProgramFunctions.functionsName)):
+                bigListNames.append(myProgramFunctions.functionsName[i])
+                bigListAddrs.append(myProgramFunctions.functionsAddr[i])
+                bigListColors.append(myProgram.funcColor)
         if(not myProgram.window.isVisible()):
             print("appended functions")        
         #variable info
-        for i in range(len(myProgramVariables.varNames)):
-            bigListNames.append(myProgramVariables.varNames[i])
-            bigListAddrs.append(myProgramVariables.varAddrs[i])
-            bigListColors.append(myProgram.varColor)
+        if myProgramWindow.addVarsCheckBox.isChecked() or not myProgramWindow.isVisible():
+            for i in range(len(myProgramVariables.varNames)):
+                bigListNames.append(myProgramVariables.varNames[i])
+                bigListAddrs.append(myProgramVariables.varAddrs[i])
+                bigListColors.append(myProgram.varColor)
              
         #stat 
-        if(myProgram.mode != "default"):# or myProgram.mode != "simple"):
+        if(myProgram.mode != "default" or myProgramWindow.modeCheckBox.isChecked()):# or myProgram.mode != "simple"):
             for i in range(len(myProgram.statHexInfo)):
                 bigListNames.append(myProgram.statWhatInfo[i])
                 bigListAddrs.append(myProgram.statHexInfo[i])
@@ -2195,6 +2244,139 @@ def isGDBRunningpy():
             return pid
 
 
+class pAllStacks (gdb.Command):
+    """print all stack information collected so far with pprint
+    supported args (number of stacks to print) <<TODO>>
+    color updates only reflect from the point done forward, does not affect previous stack colors
+    eg if variables are white on stack 1 but changed after pprint is called this change will only 
+    be reflected from stack 2 onwards"""
+    def __init__(self):
+                                 #cmd user types in goeshere
+        super(pAllStacks,self).__init__("pas",gdb.COMMAND_USER)
+    #this is what happens when they type in the command     
+    def invoke(self, arg, from_tty):
+        if len(arg)>0:
+            print(f"arg invoke: {arg}")
+        print("invoking print all stacks") 
+        print(f"from_tty: {from_tty}")
+        print(f"len arg: {len(arg)}")
+        s = myProgram.trackStacks
+        i = 0
+        if(from_tty or arg == "-c"):
+            for stack in s:
+                print(f"~~~~stack number {i}~~~~")
+                i= i +1
+                #printPair(names,addrs,colors,data):
+                printPair(stack[0],stack[1],stack[2],stack[3])
+        else:
+            for stack in s:
+                print(f"~~~~stack number {i}~~~~")
+                i= i +1
+                printPairNoColor(stack[0],stack[1],stack[3])
+        #print(f"fromtty: {from_tty} arg: {arg}")        
+pAllStacks()
+
+#modify the printpair cmd to do more than one per columns 
+class writeStacksToFile (gdb.Command):
+    """print all stack information collected so far with pprint
+    supported args (number of stacks to print) <<TODO>>
+    color updates only reflect from the point done forward, does not affect previous stack colors
+    eg if variables are white on stack 1 but changed after pprint is called this change will only 
+    be reflected from stack 2 onwards"""
+    def __init__(self):
+                                 #cmd user types in goeshere
+        super(writeStacksToFile,self).__init__("pwas",gdb.COMMAND_USER)
+    #this is what happens when they type in the command     
+    def invoke(self, arg, from_tty):
+        print("invoking writeStacksToFile")
+        if(len(arg)>0):
+            filename = arg
+        else:
+            filename = "all_stacks.txt"
+        out = gdb.execute('pas',to_string = True)
+        lines = out.splitlines()
+        with open(filename,'w') as f:
+            for line in lines:
+                print(line)
+                f.write(line)
+                f.write("\n")
+          
+writeStacksToFile()
+
+
+#modify the printpair cmd to do more than one per columns 
+#<<rethere>> <<TODO>>
+class pAutomatedTest (gdb.Command):
+    """automatically run each line of the file, collect stack information, and print to file """
+    def __init__(self):
+                                 #cmd user types in goeshere
+        super(pAutomatedTest,self).__init__("pauto",gdb.COMMAND_USER)
+    #this is what happens when they type in the command     
+    def invoke(self, arg, from_tty):
+        print("invoking pAutomatedTest")
+        
+        myProgramFunctions.populateFunctions()
+        funcNumbers = myProgramFunctions.functionsLine
+        for num in funcNumbers:
+            gdb.execute(f'b {num}')
+        i = 0
+        isRunning = isGDBRunningpy()
+        while(isRunning):
+            print("i: ",i)
+            i= i +1
+            try:
+                gdb.execute('pprint')
+                gdb.execute('n')
+            except gdb.error:
+                break
+                
+            #gdb.execute("pwas automated_all_stacks.txt")
+            isRunning = isGDBRunningpy()
+        #print(myProgramFunctions.functionsLine)
+        if(len(arg)>0):
+            if(arg == "-t"):
+                gdb.execute('pas -c')
+        else:        
+            gdb.execute('pwas')
+         
+pAutomatedTest()
+
+class changemode (gdb.Command):
+    """change the current program mode
+    simple/default: 
+        print most important inforomation leaving out <certain things>
+        when pchangemode is called witn no arguments or with "default," "simple"
+    verbose/complex: 
+        print everything. yes, everything. 
+    builder: 
+        build print output only displaying things user wants
+            example: registers and variables but not functions and boundry information
+                pregs, pvars, pprint"""
+                
+    def __init__(self):
+                                 #cmd user types in goeshere
+        super(changemode,self).__init__("pchangemode",gdb.COMMAND_USER)
+    #this is what happens when they type in the command     
+    def invoke(self, arg, from_tty):
+        
+        print("invoking changemode") 
+        if myProgram.mode == 'default':
+            myProgram.mode = 'complex'
+            myProgramWindow.modeCheckBox.setChecked(True)
+        elif myProgram.mode == 'complex':
+            myProgram.mode = 'default'
+            myProgramWindow.modeCheckBox.setChecked(False)
+        else: 
+            print("invalid change somehow check pchangemode\nChanging to default.")    
+            myProgram.mode = "default"
+        # if(len(arg))<1:
+        #     myProgram.mode = 'default'
+        #     print("changed mode to default")    
+        # print(f"from_tty: {from_tty}")
+        # print(f"len arg: {len(arg)} args: {arg}")
+        # myProgram.mode = arg
+
+changemode()
 
 class tcmd (gdb.Command):
     """reload this file, with changes"""
