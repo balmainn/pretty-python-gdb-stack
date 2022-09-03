@@ -2243,7 +2243,21 @@ def isGDBRunningpy():
                 print(f"i am running, my pid is: {pid}")
             return pid
 
+#returns the current line of the program based on the current line  
+#need to give this to pas or pwas <<TODO>> <current project>
+def getCodeLine():
+    currentLine = myProgram.codeWindow.getCurrentLine()
+    file_path = myProgram.codeWindow.localfilepath
+    codeLines = []
+    with open(file_path, "r") as f:
+        codeLines = f.readlines()
+    print(currentLine)
+    print(codeLines, len(codeLines))
 
+    for i in range(len(codeLines)):
+        if i == int(currentLine)-1:
+            print("this line matches", i,currentLine,codeLines[i])
+            return codeLines[i]
 class pAllStacks (gdb.Command):
     """print all stack information collected so far with pprint
     supported args (number of stacks to print) <<TODO>>

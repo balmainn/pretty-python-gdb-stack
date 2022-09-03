@@ -5,5 +5,16 @@ sudo pip install python-dev-tools termcolor PyQt6 PySide6
 #fix PyQt6 because pip install is not enough
 sudo python3 -m pip install pip setuptools --upgrade
 sudo python3 -m pip install PyQt6
-#set .gdbinit in local filepath
+#set safe auto load in local .gdbinit
 echo "set auto-load safe-path /" > .gdbinit
+#set safe auto load globally (make sure gdb directory exists first)
+cd ~
+if [ -d ~/.config/gdb/]
+then
+    echo "set auto-load safe-path /" > ~/.config/ggdb/.gdbinit
+else 
+    cd ~/.config/
+    mkdir gdb && cd gdb
+    echo "set auto-load safe-path /" > .gdbinit
+fi
+
