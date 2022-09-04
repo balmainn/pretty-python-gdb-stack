@@ -1019,7 +1019,7 @@ class Program:
             self.gdbOutputLayout = QVBoxLayout()
             #self.labelsLayout = QVBoxLayout() 
             self.w1 = self.CodeWindow()
-            self.w2 = self.WindowTwo()
+            self.w2 = self.EverythingWindow()
             self.setWindowTitle(f"multiple Windows")
             codeWindowButton = QPushButton("Show/Hide Code Window")
             pprintButton = QPushButton("run pprint")
@@ -1029,6 +1029,7 @@ class Program:
             gdbNextButton = QPushButton("next")
             pmapButton = QPushButton("Print stack/heap range")
             pstatButton = QPushButton("Print info from /proc/$pid/stat")
+            pEverythingButton = QPushButton("Auto run")
             
             pprintButton.clicked.connect((lambda: self.runCommand("pprint")))
             pstackButton.clicked.connect((lambda: self.runCommand("pstack")))
@@ -1037,6 +1038,7 @@ class Program:
             pmapButton.clicked.connect((lambda: self.runCommand("pmap")))
             pstatButton.clicked.connect((lambda: self.runCommand("pstat")))
             gdbNextButton.clicked.connect(self.gdbNext)
+            pEverythingButton.clicked.connect(self.printEverything)
 
 
             #pvars pfunc pmap pstat pstack 
@@ -1074,8 +1076,6 @@ class Program:
             codeWindowButton.setMaximumWidth(200)
             button2.setMaximumWidth(100)
             helpButton.setMaximumWidth(100)
-            
-            
 
             align = Qt.AlignmentFlag(0) #align left
             
@@ -1097,7 +1097,7 @@ class Program:
             self.buttonsLayout3 = QHBoxLayout()
             self.buttonsLayout3.addWidget(pmapButton)
             self.buttonsLayout3.addWidget(pstatButton)
-            self.buttonsLayout3.addWidget(QLabel(""))
+            self.buttonsLayout3.addWidget(pEverythingButton)
 
             self.checkBoxLayout = QHBoxLayout()
             self.modeCheckBox = QCheckBox("complex")
@@ -1146,6 +1146,10 @@ class Program:
             
             #self.setCentralWidget(widget)
             #generate the help dialogue box, basically will list commands and what they do (pprint docstring more or less)
+        def printEverything(self):
+            self.w2.populateEverything()
+            self.w2.show()
+            
         def gdbNext(self):
             gdb.execute('n')
             self.w1.setCodeText()
@@ -1163,17 +1167,7 @@ class Program:
             print(value)
             self.optionsSelected = value
             return value      
-            
-        # def testFunc(self):
-        #     pprintOptions = window.optionsSelected
-        #     if pprintOptions.find('r') != -1:
-        #         print("registers to pprint")          
-        #     if pprintOptions.find('v') != -1:
-        #         print("variables to pprint")          
-        #     if pprintOptions.find('f') != -1:
-        #         print("functions to pprint")  
-        
-        
+
         def modeCheck(self):
             #print("modecheck first:", self.modeCheckBox.isChecked())
             gdb.execute("pchangemode")
@@ -1382,28 +1376,99 @@ class Program:
                 print("rejected")    
                 self.close()
            
-        class WindowTwo(QMainWindow):
+        class EverythingWindow(QMainWindow):
 
             def __init__(self):
                 super().__init__()
-                self.layout = QGridLayout()
-                label = QLabel("WINDOW Two")
-                label2 = QLabel("WINDOW Two")
-                label3 = QLabel("WINDOW Two")
+                self.outerLayout = QVBoxLayout()
                 self.widget = QWidget()
-                self.widget.setLayout(self.layout)
+                self.widget.setLayout(self.outerLayout)
                 self.scroll = QScrollArea()
                 #Scroll Area Properties
                 self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
                 self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
                 self.scroll.setWidgetResizable(True)
                 self.scroll.setWidget(self.widget)
-
                 self.setCentralWidget(self.scroll)
-                self.layout.addWidget(label,0,0)
-                self.layout.addWidget(label3,0,3)
-                self.layout.addWidget(label2,0,2)
-                self.layout.addWidget(label,0,1)
+
+        #returns the current line of the program based on the current line  
+            def getCodeLine(self):
+                currentLine = myProgram.codeWindow.getCurrentLine()
+                file_path = myProgram.codeWindow.localfilepath
+                codeLines = []
+                with open(file_path, "r") as f:
+                    codeLines = f.readlines()
+                print(currentLine)
+                print(codeLines, len(codeLines))
+
+                for i in range(len(codeLines)):
+                    if i == int(currentLine)-1:
+                        print("this line matches", i,currentLine,codeLines[i])
+                        return codeLines[i]
+                        
+            def setAllLabels(self,stuff):
+    
+                row = 0
+                headerCounter = 0
+                for singleList in stuff:
+                    headder = QHBoxLayout()
+                    #currentCodeLine = self.getCodeLine()
+                    headderLabel = QLabel(f"{self.codelines[headerCounter]}")
+                    headderLabel.setStyleSheet("border-top: 2px solid black")
+                    headder.addWidget(headderLabel)
+                    
+                    container = QGridLayout()
+                    zlist= list(zip(*singleList))
+                    j = 0
+                    for thing in zlist:
+                        color = thing[2]
+                        #if color is meh change it to something good
+                        if color == 'white':
+                            color = 'black'
+                        if color == 'yellow':
+                            color = '#ff9900'
+                        nameLabel = QLabel(f"<html><font color={color}>{thing[0]}</font></html>")
+                        addrLabel = QLabel(f"<html><font color={color}>{thing[1]}</font></html>")
+                        dataLabel = QLabel(f"<html><font color={color}>{thing[3]}</font></html>")
+                        
+                        container.addWidget(nameLabel,row,0)
+                        container.addWidget(addrLabel,row,1)
+                        container.addWidget(dataLabel,row,2)
+                        row = row+1
+                    headerCounter = headerCounter+1 
+                    self.outerLayout.addLayout(headder)
+                    self.outerLayout.addLayout(container)
+
+            def populateEverything(self):
+                print("w2 running everything")
+                #remove all stacks from the program, so it doesnt mess anything up
+                myProgram.trackStacks.clear()
+                #delete all breakpoints and get going
+                gdb.execute('del breakpoints')
+                myProgramFunctions.populateFunctions()
+                funcNumbers = myProgramFunctions.functionsLine
+                for num in funcNumbers:
+                    gdb.execute(f'b {num}')
+                i = 0
+                gdb.execute('r')
+                isRunning = isGDBRunningpy()
+                self.codelines = []
+                while(isRunning):
+                    print("i: ",i)
+                    i= i +1
+                    try:
+                        gdb.execute('pprint everything')
+                        self.codelines.append(self.getCodeLine())
+                        gdb.execute('n')
+                    except gdb.error:
+                        break
+                        
+                    #gdb.execute("pwas automated_all_stacks.txt")
+                    isRunning = isGDBRunningpy()
+                #print(myProgramFunctions.functionsLine)
+                self.setAllLabels(myProgram.trackStacks)
+                
+
         class CodeWindow(QMainWindow):
 
             def __init__(self):
@@ -1570,8 +1635,9 @@ class Program:
                     out = gdb.execute("frame",to_string = True)
                     print(out)
                     lines = out.splitlines()
-                    m = re.search("^\d+", lines[1])
+                    
                     try:
+                        m = re.search("^\d+", lines[1])
                         numString = m.group(0)#[1:-1]
                         numInt = int(numString)
                     except:
@@ -1579,7 +1645,8 @@ class Program:
                         print("error in getCurrentLine")
                         pass
                 else:
-                    numString = 0    
+                    numString = 0   
+                print(f"returning {numString} from getcurrentline") 
                 return numString
             def getProgramFilePathForWindow(self):
                 line = gdb.execute('info file', to_string = True)
@@ -2111,7 +2178,8 @@ class pprint (gdb.Command):
                 printPair(bigListNames,bigListAddrs,bigListColors,bigListData)
           
         sortedNames, sortedAddrs, sortedColors, sortedData = sortTheBigList(bigListNames,bigListAddrs,bigListColors,bigListData)
-        if(myProgram.window.isVisible()):
+        if(myProgram.window.isVisible() and not arg == "everything"):
+            
             #printPairNoColor(bigListNames,bigListAddrs,bigListData)
             #myProgram.window.changeCentralLabels([bigListNames,bigListAddrs,bigListData])
             myProgram.window.changeCentralLabels([sortedNames,sortedAddrs,sortedData,sortedColors],1)
@@ -2243,21 +2311,6 @@ def isGDBRunningpy():
                 print(f"i am running, my pid is: {pid}")
             return pid
 
-#returns the current line of the program based on the current line  
-#need to give this to pas or pwas <<TODO>> <current project>
-def getCodeLine():
-    currentLine = myProgram.codeWindow.getCurrentLine()
-    file_path = myProgram.codeWindow.localfilepath
-    codeLines = []
-    with open(file_path, "r") as f:
-        codeLines = f.readlines()
-    print(currentLine)
-    print(codeLines, len(codeLines))
-
-    for i in range(len(codeLines)):
-        if i == int(currentLine)-1:
-            print("this line matches", i,currentLine,codeLines[i])
-            return codeLines[i]
 class pAllStacks (gdb.Command):
     """print all stack information collected so far with pprint
     supported args (number of stacks to print) <<TODO>>
