@@ -9,3 +9,5 @@ run install.sh
 place pprint.py in the same directory as the executable and .c file that was used to create it.\ 
 these files must have the same name, with exception of the extension. Run the below command\
 ### gdb ./executable -x ppgdb.py
+example\
+gdb ./simple_program -x ppgdb.py
