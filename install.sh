@@ -11,7 +11,7 @@ echo "set auto-load safe-path /" > .gdbinit
 cd ~
 if [ -d ~/.config/gdb/ ]
 then
-    echo "set auto-load safe-path /" > ~/.config/ggdb/.gdbinit
+    echo "set auto-load safe-path /" > ~/.config/gdb/.gdbinit
 else 
     cd ~/.config/
     mkdir gdb && cd gdb
