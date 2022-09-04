@@ -9,7 +9,7 @@ sudo python3 -m pip install PyQt6
 echo "set auto-load safe-path /" > .gdbinit
 #set safe auto load globally (make sure gdb directory exists first)
 cd ~
-if [ -d ~/.config/gdb/]
+if [ -d ~/.config/gdb/ ]
 then
     echo "set auto-load safe-path /" > ~/.config/ggdb/.gdbinit
 else 
