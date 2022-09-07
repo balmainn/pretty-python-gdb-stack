@@ -13,20 +13,15 @@ import sys
 import os
 
 
-# # Subclass QMainWindow to customize your application's main window
-
 from PyQt6.QtWidgets import *
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
 from  PyQt6 import *
-import PyQt6 as pqt6
-#for l in lines:
 #     print(l)
 import re
 import gdb
 gdb.execute('b main')
 gdb.execute('r')
-
 
 #heap class doesnt really do anything right now but may be utilized upon further development of this program.
 class Heap:
@@ -123,9 +118,9 @@ class Stack:
         #print("addrs and list getregpairs: ", bigListAddrs,bigListNames)
         for i in range(len(bigListAddrs)):
             bigListData.append("")
-        
-        for i in range(len(bigListNames)):
-            print(f"looking at: {bigListNames[i]} in getPair") 
+        if myProgram.mode == "debug":
+            for i in range(len(bigListNames)):
+                print(f"looking at: {bigListNames[i]} in getPair") 
          #   print(f"bigdata: {i}  {bigListData[i]}")
         #print(len(bigListData))     
             if (bigListNames[i] == 'saved_ebx'):
@@ -156,7 +151,8 @@ class Stack:
                     bigListData[i] = "$sp_"+spAddr
                 except:
                     pass
-        print("returning big list data: ",bigListData)        
+        if myProgram.mode == "debug":
+            print("returning big list data: ",bigListData)        
         return bigListData
     #simple sorting function that sorts the registers by their address.    
     def sortRegs(self):
@@ -180,7 +176,8 @@ class Stack:
     
     #prints all stack registers
     def printAll(self):
-        print("printing stack")
+        if myProgram.mode == "debug":
+            print("printing stack")
         regColors =['white'] * len(self.stackRegisterAddresses)        
         printPair(self.stackRegisterNames,self.stackRegisterAddresses,regColors, "")
 
@@ -721,8 +718,7 @@ def pvartest(input,givenColors=0):
             #self.centralLabels.setText(out)
         pass
     
-    #print(input)
-print("before program")
+
 class Program:
 
     def __init__(self):   
@@ -1164,7 +1160,7 @@ class Program:
                 value=value+"v"
             if self.addFunctionsCheckBox.isChecked():
                 value=value+"f"    
-            print(value)
+            #print(value)
             self.optionsSelected = value
             return value      
 
@@ -1217,7 +1213,7 @@ class Program:
                             #itemWidget.setStyleSheet("border: 1px solid black;")
                             
                             outText = f"<html><font color={color}>{zlist[i][j]}</font></html>"
-                            print("~~~~~OUTTEXT~~~~~~~",outText)
+                            #print("~~~~~OUTTEXT~~~~~~~",outText)
                             itemWidget.setText(outText)
                             count=count+1
 
@@ -1394,7 +1390,8 @@ class Program:
         #returns the current line of the program based on the current line  
             def getCodeLine(self):
                 currentLine = myProgram.codeWindow.getCurrentLine()
-                file_path = myProgram.codeWindow.localfilepath
+                file_path = myProgram.codeWindow.filepath #myProgram.codeWindow.localfilepath
+                
                 codeLines = []
                 with open(file_path, "r") as f:
                     codeLines = f.readlines()
@@ -1413,6 +1410,7 @@ class Program:
                 for singleList in stuff:
                     headder = QHBoxLayout()
                     #currentCodeLine = self.getCodeLine()
+                    #add code line number
                     headderLabel = QLabel(f"{self.codelines[headerCounter]}")
                     headderLabel.setStyleSheet("border-top: 2px solid black")
                     headder.addWidget(headderLabel)
@@ -1559,7 +1557,7 @@ class Program:
                 #print(self.label1.text())     
                 #print(bst)
             def getBreakpoints(self):
-                print("get breakpoints called")
+                #print("get breakpoints called")
                 breakpointRegex = "\d+$"
                 out = gdb.execute('info breakpoints',to_string = True)
                 lines = out.splitlines()
@@ -1642,11 +1640,12 @@ class Program:
                         numInt = int(numString)
                     except:
                         numString = 0
+                        #this might be fine...?
                         print("error in getCurrentLine")
                         pass
                 else:
                     numString = 0   
-                print(f"returning {numString} from getcurrentline") 
+                #print(f"returning {numString} from getcurrentline") 
                 return numString
             def getProgramFilePathForWindow(self):
                 line = gdb.execute('info file', to_string = True)
@@ -1676,8 +1675,8 @@ class Program:
                 self.localfilepath = localfilepath+".c"
                 print(self.filepath)    
 
-print("after program")
-#print(result)
+
+
 class pwindow (gdb.Command):
     """reload this file, with changes"""
     def __init__(self):
@@ -1818,6 +1817,12 @@ myProgramHeap = myProgram.programHeap
 myProgramFunctions = myProgram.programFuncs
 myProgramVariables = myProgram.programVariables
 myProgramWindow = myProgram.window
+print("Welcome to PPGDB Alpha build.")
+print("Please ensure that the executable and filename are in the same folder as ppgdb.py and they share their name. EG: myExecutable and myExecutable.c")
+print("The program has started debugging and a breakpoint has been set in main.")
+print("For help please use \"help pprint\"")
+print("to launch the GUI please use the command \"pwindow\"")
+
 
 
 class resource (gdb.Command):
@@ -1957,6 +1962,7 @@ pmaps()
 class pprint (gdb.Command):
     """run all p commands and hope for the best
     <copy paste information for all functions here>  gdb.execute('pfunc')
+    To open gui mode the command is 'pwi' or 'pwindow'
     supported commands:
         'pvars'
             Prints variables, their contents, and location on the stack
@@ -1982,7 +1988,7 @@ class pprint (gdb.Command):
                 [not implamented]    
                     <Debug mode>: print debug information (lots of terminal output helpful trace information in finding problems with the program )
         'pauto'
-            Prints stack information for each line in the code reachable by gdb "n."
+            Prints stack information for each line in the code reachable by gdb "n"
                 displays this information in the created file "all_stacks.txt" 
         'pas'
             print all stacks
