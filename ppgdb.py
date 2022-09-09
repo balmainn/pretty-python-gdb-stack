@@ -22,7 +22,8 @@ import re
 import gdb
 gdb.execute('b main')
 gdb.execute('r')
-
+#global debug variable
+DEBUG = 1
 #heap class doesnt really do anything right now but may be utilized upon further development of this program.
 class Heap:
     def __init__(self) -> None:
@@ -830,32 +831,24 @@ class Program:
         print(out)
     #get the program filepath
     def getProgramFilePath(self):
-        line = gdb.execute('info file', to_string = True)
-        fpre = "`\/home\/.+'"
+        filestring= gdb.selected_frame().find_sal().symtab.fullname() + os.linesep
+        self.filepath = filestring.strip()
+        self.executable = self.filepath[:-2]
         try:
-            m = re.search(fpre,line)
-            self.filepath = m.group(0)[1:-1]
-            self.executable = self.filepath
-            self.filepath = self.filepath+".c"
-        except:
-            self.filepath = "unknown.c"
-            self.executable = "unknown"
-            pass
-            
-        localfilepath = self.executable
-        try:
-            m = re.search("\w+$",localfilepath)
-            localfilepath = m.group(0)
+            m = re.search("\w+.c$",self.filepath)
+            self.localfilepath = m.group(0)
+            self.localexecutable = self.localfilepath[:-2]
+
             
         except:
-            localfilepath = "unknown.c"
-            pass
-        if(self.filepath == "unknown.c" or localfilepath == "unknown.c"):
-            print("cannot parse this file, is it named correctly?")  
-            return  
-        self.localexecutable = localfilepath
-        self.localfilepath = localfilepath+".c"
-        print(self.filepath) 
+            self.localfilepath = "unknown.c"
+            self.localexecutable = "unknown"
+            pass    
+        if DEBUG:
+            print(self.filepath)
+            print(self.localfilepath)    
+            print(self.executable)
+            print(self.localexecutable)
         
     #get the running program's process ID
     #this starts debugging leaving it on the first line of main. 
@@ -1323,10 +1316,13 @@ class Program:
         class HelpDialogue(QDialog):
             def __init__(self, parent=None):
                 super().__init__(parent)
-                self.setWindowTitle("<<TODO> CHANGEME Help Menu!")
-
-                
-
+                self.setGeometry(200, 200, 700, 400)
+                self.setWindowTitle("Help Dialogue")
+        
+        
+                label = QLabel(self)
+                pixmap = QPixmap('ppgdb-help-picture.png')
+                label.setPixmap(pixmap)
                 QBtn = QDialogButtonBox.StandardButton.Ok 
 
                 self.buttonBox = QDialogButtonBox(QBtn)
@@ -1334,12 +1330,13 @@ class Program:
                 
                 
                 self.layout = QVBoxLayout()
-                message = QLabel("<<TODO>> help menu diag box")
+                message = QLabel("")
                 
                 self.layout.addWidget(message)
+                self.layout.addWidget(label)
                 self.layout.addWidget(self.buttonBox)
                 
-                self.setLayout(self.layout)
+                self.setLayout(self.layout)  
             def accepted(self):
                 self.close()
         class CustomDialog(QDialog):
@@ -1648,32 +1645,27 @@ class Program:
                 #print(f"returning {numString} from getcurrentline") 
                 return numString
             def getProgramFilePathForWindow(self):
-                line = gdb.execute('info file', to_string = True)
-                fpre = "`\/home\/.+'"
+                
+                #line = gdb.execute('info file', to_string = True)
+                filestring= gdb.selected_frame().find_sal().symtab.fullname() + os.linesep
+                self.filepath = filestring.strip()
+                self.executable = self.filepath[:-2]
                 try:
-                    m = re.search(fpre,line)
-                    self.filepath = m.group(0)[1:-1]
-                    self.executable = self.filepath
-                    self.filepath = self.filepath+".c"
-                except:
-                    self.filepath = "unknown.c"
-                    self.executable = "unknown"
-                    pass
-                    
-                localfilepath = self.executable
-                try:
-                    m = re.search("\w+$",localfilepath)
-                    localfilepath = m.group(0)
+                    m = re.search("\w+.c$",self.filepath)
+                    self.localfilepath = m.group(0)
+                    self.localexecutable = self.localfilepath[:-2]
+
                     
                 except:
-                    localfilepath = "unknown.c"
-                    pass
-                if(self.filepath == "unknown.c" or localfilepath == "unknown.c"):
-                    print("cannot parse this file, is it named correctly?")  
-                    return  
-                self.localexecutable = localfilepath
-                self.localfilepath = localfilepath+".c"
-                print(self.filepath)    
+                    self.localfilepath = "unknown.c"
+                    self.localexecutable = "unknown"
+                    pass    
+                if DEBUG:
+                    print(self.filepath)
+                    print(self.localfilepath)    
+                    print(self.executable)
+                    print(self.localexecutable)
+                    
 
 
 
@@ -2455,13 +2447,13 @@ class tcmd (gdb.Command):
     """reload this file, with changes"""
     def __init__(self):
                                  #cmd user types in goeshere
-        super(resource,self).__init__("tcmd",gdb.COMMAND_USER)
+        super(tcmd,self).__init__("tcmd",gdb.COMMAND_USER)
     #this is what happens when they type in the command     
     def invoke(self, arg, from_tty):
-        
+        myProgram.codeWindow.getProgramFilePathForWindow()
         #gdb.execute("source test.py")
         print("test print completed")
-resource() 
+tcmd() 
 
 
             #if obj.__class__ == pqt6:
