@@ -1,6 +1,6 @@
 #<<TODO>>need to add an on_exit button that asks if they want to quit gdb if the window is up. 
 
-from termios import TIOCM_ST
+#from termios import TIOCM_ST
 from pygments import highlight
 from pygments.style import Style
 from pygments.token import *
@@ -77,6 +77,7 @@ def testPrint(names, addrs):
 
 #the class stack contains all the information about the stack at a given point in the program.
 class Stack:
+    """this is a class"""
     def __init__(self) -> None:
         #containers that hold register addresses as well as their name (eip, edx, etc.)
         self.stackRegisterAddresses =  []
@@ -115,12 +116,19 @@ class Stack:
         boundryList = ["esp", "saved_ebp", "previous_sp"]
         bigListNames = self.stackRegisterNames
         bigListAddrs = self.stackRegisterAddresses
-        bigListData = [] 
-        #print("addrs and list getregpairs: ", bigListAddrs,bigListNames)
+        
+        if DEBUG:
+            #print("addrs and list getregpairs: ", bigListAddrs,bigListNames)
+            bigListData = [] 
+            for i in range(len(bigListNames)):
+                bigListData.append("")
+            #printPairNoColor(bigListNames,bigListAddrs,bigListData)
+        bigListData = []    
         for i in range(len(bigListAddrs)):
             bigListData.append("")
-        if myProgram.mode == "debug":
-            for i in range(len(bigListNames)):
+        
+            #for i in range(len(bigListNames)):
+            if myProgram.mode == "debug" or DEBUG:
                 print(f"looking at: {bigListNames[i]} in getPair") 
          #   print(f"bigdata: {i}  {bigListData[i]}")
         #print(len(bigListData))     
@@ -130,8 +138,6 @@ class Stack:
                     if(bigListNames[j] == 'ebx'):
                         bigListData[i] = 'ebx_'+bigListAddrs[j]
                         bigListData[j] = 'saved_ebx_'+bigListAddrs[i]
-                        
-                        
                         break
 
             if (bigListNames[i] == 'saved_eip'):
@@ -141,8 +147,7 @@ class Stack:
                     if(bigListNames[j] == 'eip'):
                         bigListData[i] = 'eip_'+bigListAddrs[j]
                       
-                        
-                      
+                    
             if( bigListNames[i] == 'previous_sp'  ):
                 #bigListColors[i] = 'magenta'   
                 out = gdb.execute('p $sp',to_string = True)
@@ -152,8 +157,9 @@ class Stack:
                     bigListData[i] = "$sp_"+spAddr
                 except:
                     pass
-        if myProgram.mode == "debug":
-            print("returning big list data: ",bigListData)        
+        if myProgram.mode == "debug" or DEBUG:
+            print("returning big list data: ",bigListData)   
+            printPairNoColor(bigListNames,bigListAddrs,bigListData)     
         return bigListData
     #simple sorting function that sorts the registers by their address.    
     def sortRegs(self):
@@ -177,7 +183,7 @@ class Stack:
     
     #prints all stack registers
     def printAll(self):
-        if myProgram.mode == "debug":
+        if myProgram.mode == "debug" or DEBUG:
             print("printing stack")
         regColors =['white'] * len(self.stackRegisterAddresses)        
         printPair(self.stackRegisterNames,self.stackRegisterAddresses,regColors, "")
@@ -247,6 +253,7 @@ class Stack:
         #print(m)
         frame_eip = m[0]
         frame_saved_eip = m[1]
+        #print("~~~~~~~~~~FRAME SAVED EIP ~~~~~~~~", frame_saved_eip)
         m = re.findall(eip_savedEip_regex, frameArr[3]) #,4,6
         frameRegs = []
         frameRegNames = []
@@ -1116,6 +1123,12 @@ class Program:
             self.outerLayout.addLayout(self.buttonsLayout2)
             self.outerLayout.addLayout(self.buttonsLayout3)
             self.outerLayout.addWidget(self.gdbInput)
+
+            self.codeLineLabel = QLabel("")
+            self.codeLineLabelLayout = QHBoxLayout()
+            self.codeLineLabelLayout.addWidget(self.codeLineLabel)
+            self.outerLayout.addLayout(self.codeLineLabelLayout)
+
             self.testLayout = QVBoxLayout()
             self.testLayout.addLayout(self.labelsLayout)
             #self.outerLayout.addLayout(self.labelsLayout)
@@ -1141,6 +1154,8 @@ class Program:
             
         def gdbNext(self):
             gdb.execute('n')
+            currentCodeLine = myProgramWindow.w2.getCodeLine()
+            myProgram.window.codeLineLabel.setText(currentCodeLine)
             self.w1.setCodeText()
             self.w1.setNumberLabels()
 
@@ -1250,7 +1265,6 @@ class Program:
         def gdbInputReturnPressed(self):
             cw = self.w1
             
-            
             text = self.gdbInput.text()
             print(text)    
             self.gdbInput.setText("")
@@ -1261,6 +1275,9 @@ class Program:
             if(text[0]!='p'):
                 try:
                     out = gdb.execute(text,to_string=True)
+                    currentCodeLine = myProgramWindow.w2.getCodeLine()
+                    myProgram.window.codeLineLabel.setText(currentCodeLine)
+
                     self.gdbOutputText.setText(out)
                     self.w1.setCodeText()
                     self.w1.setNumberLabels()
@@ -1274,6 +1291,8 @@ class Program:
                 if(len(matches)>0):
                     self.gdbOutputText.setText("")
                     gdb.execute(text)
+                    currentCodeLine = myProgramWindow.w2.getCodeLine()
+                    myProgram.window.codeLineLabel.setText(currentCodeLine)
                     cw.setCodeText()
                     cw.setNumberLabels()
                     return
@@ -1282,6 +1301,8 @@ class Program:
                     try:
                         out = gdb.execute(text,to_string=True)
                         self.gdbOutputText.setText(out)
+                        currentCodeLine = myProgramWindow.w2.getCodeLine()
+                        myProgram.window.codeLineLabel.setText(currentCodeLine)
                         self.w1.setCodeText()
                         self.w1.setNumberLabels()
                     except gdb.error as e:
@@ -1676,6 +1697,8 @@ class pwindow (gdb.Command):
         super(pwindow,self).__init__("pwindow",gdb.COMMAND_USER)
     #this is what happens when they type in the command     
     def invoke(self, arg, from_tty):
+        currentCodeLine = myProgramWindow.w2.getCodeLine()
+        myProgram.window.codeLineLabel.setText(currentCodeLine)
         myProgramWindow.show()
         myProgram.app.exec()
         
@@ -1695,23 +1718,47 @@ class pstack (gdb.Command):
             
             print("invoking pstack")
             print(f"len arg: {len(arg)} it is: {arg} type: {type(arg)} argstring: {argString}")
-            myProgramStack.getRegs()
-            myProgramStack.sortRegs()
+            
             if(from_tty):
                 if(not myProgram.window.isVisible()):
+                    pair = myProgramStack.getRegisterPairs()
+                    #myProgramStack.printAll()
+                    #add colors 
+                    special_registers = ['eip', 'edx', 'edi', 'saved_ebp','previous_sp'] #double check these 
+                    outnames = []
+                    outaddrs = []
+                    outcolors= []
+                    for i in range(len(myProgramStack.stackRegisterNames)):
+                        outnames.append(myProgramStack.stackRegisterNames[i])
+                        outaddrs.append(myProgramStack.stackRegisterAddresses[i])
+                        found = 0
+                        for specReg in special_registers:
+                            
+                            if(myProgramStack.stackRegisterNames[i] == specReg):
+                                #print(f"looking at {myProgramStack.stackRegisterNames[i]} == {specReg}")
+                                outcolors.append(myProgram.specialRegisterColor)
+                                found = 1
+                        if(not found):    
+                            outcolors.append(myProgram.regColor)
                     
-                    myProgramStack.printAll()
+
+                    names,addrs,colors,pair = sortTheBigList(outnames,outaddrs,outcolors,pair)
+                    printPair(names,addrs,colors,pair)
+                    #printPair(outnames,outaddrs,outcolors,pair)
                 else:
                     pair = myProgramStack.getRegisterPairs()
                     #from pprint how bug
                     #myProgramWindow.changeCentralLabels([myProgramStack.stackRegisterNames,myProgramStack.stackRegisterAddresses,pair])        
             else:
-                print("updating gdb window pstack")
+                if DEBUG:
+                    print("updating gdb window pstack")
                 pair = myProgramStack.getRegisterPairs()
-                print("before update: ", myProgramStack.stackRegisterNames,myProgramStack.stackRegisterAddresses,pair)
+                if DEBUG:
+                    print("before update: ", myProgramStack.stackRegisterNames,myProgramStack.stackRegisterAddresses,pair)
                 if(myProgramWindow.isVisible() and argString[0] != 'from_pprint'):
                     myProgramStack.stackRegisterNames.insert(0,"register")
                     myProgramStack.stackRegisterAddresses.insert(0,"address")
+                    pair.insert(0,"data")
                     myProgramWindow.changeCentralLabels([myProgramStack.stackRegisterNames,myProgramStack.stackRegisterAddresses,pair])
                     #myProgramWindow.changeCentralLabels([myProgramStack.stackRegisterNames,myProgramStack.stackRegisterAddresses,pair],1)    
                 #pair.insert(0,"pointed to")
@@ -2149,7 +2196,8 @@ class pprint (gdb.Command):
                         bigListData[i] = 'ebx_'+bigListAddrs[j]
                         bigListData[j] = 'saved_ebx_'+bigListAddrs[i]
                         if(not myProgram.window.isVisible()):
-                            print("eip has been found")
+                            if DEBUG:
+                                print("eip has been found")
                         break
 
             if (bigListNames[i] == 'saved_eip'):
@@ -2159,7 +2207,8 @@ class pprint (gdb.Command):
                     if(bigListNames[j] == 'eip'):
                         bigListData[i] = 'eip_'+bigListAddrs[j]
                         if(not myProgram.window.isVisible()):
-                            print("eip has been found")
+                            if DEBUG:
+                                print("eip has been found")
                         break
             if( bigListNames[i] == 'previous_sp'  ):
                 bigListColors[i] = 'magenta'   
@@ -2180,6 +2229,10 @@ class pprint (gdb.Command):
             
             #printPairNoColor(bigListNames,bigListAddrs,bigListData)
             #myProgram.window.changeCentralLabels([bigListNames,bigListAddrs,bigListData])
+     
+            currentCodeLine = myProgramWindow.w2.getCodeLine()
+            myProgram.window.codeLineLabel.setText(currentCodeLine)
+
             myProgram.window.changeCentralLabels([sortedNames,sortedAddrs,sortedData,sortedColors],1)
        
             #print(sortedNames,sortedAddrs,sortedData)
@@ -2222,17 +2275,19 @@ class pprint (gdb.Command):
         for s in myProgram.trackStacks:
             #print(s)
             trackedSet = set(s[1])
-            
-            print("set difference: ", localSet - trackedSet)
-            print("len of labels:", len(sortedNames))
+            if DEBUG:
+                print("set difference: ", localSet - trackedSet)
+                print("len of labels:", len(sortedNames))
             #change to != later <<TODO>>
             if(trackedSet - localSet == set()):
                 if(not myProgram.window.isVisible()):
-                    print("nothing to do here the set is empty")
+                    if DEBUG:
+                        print("nothing to do here the set is empty")
                 #print(trackedSet)
             else:
                 if(not myProgram.window.isVisible()):
-                    print("not empty add to list")
+                    if DEBUG:
+                        print("not empty add to list")
                 
                 myProgram.trackStacks.append([sortedNames,sortedAddrs,sortedColors,sortedData])
                 break
@@ -2323,8 +2378,9 @@ class pAllStacks (gdb.Command):
         if len(arg)>0:
             print(f"arg invoke: {arg}")
         print("invoking print all stacks") 
-        print(f"from_tty: {from_tty}")
-        print(f"len arg: {len(arg)}")
+        if DEBUG:
+            print(f"from_tty: {from_tty}")
+            print(f"len arg: {len(arg)}")
         s = myProgram.trackStacks
         i = 0
         if(from_tty or arg == "-c"):
