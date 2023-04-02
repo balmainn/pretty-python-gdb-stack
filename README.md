@@ -4,7 +4,13 @@ takes gdb output of a stack and makes it pretty with python
 
 # Installation
 git clone this repo\
-run install.sh 
+run sudo install.sh 
+
+#gui version 
+git clone this repo\
+git switch alpha\
+run sudo install.sh\
+NOTE** the gui version only works if you have a gui, it will not work over ssh. 
 
 # Using 
 place pprint.py in the same directory as the executable and .c file that was used to create it. 
