@@ -1,8 +1,0 @@
-dependencies 
-
-pip install appjar
-pip inst
-pip install python-dev-tools
-pip install PyQt6
-apt install texinfo ? 
-apt-get install gcc-multilib

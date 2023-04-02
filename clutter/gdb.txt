@@ -1,7 +1,0 @@
-Stack level 0, frame at 0x7fffffffdd30:
- rip = 0x55555555521c in main (simple_program.c:9); saved rip = 0x7ffff7deb0b3
- source language c.
- Arglist at 0x7fffffffdbe8, args: 
- Locals at 0x7fffffffdbe8, Previous frame's sp is 0x7fffffffdd30
- Saved registers:
-  rbp at 0x7fffffffdd20, rip at 0x7fffffffdd28
