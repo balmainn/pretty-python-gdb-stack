@@ -1,10 +1,12 @@
 #!/bin/bash
 #install dependencies 
-sudo apt install python3 pip gcc-multilib 
-sudo pip install python-dev-tools termcolor PyQt6 PySide6
-#fix PyQt6 because pip install is not enough
-sudo python3 -m pip install pip setuptools --upgrade
-sudo python3 -m pip install PyQt6
+apt update
+apt install python3 pip gcc-multilib gdb -y
+pip install python-dev-tools pygments termcolor 
+
+
+python3 -m pip install pip setuptools --upgrade
+
 #set safe auto load in local .gdbinit
 echo "set auto-load safe-path /" > .gdbinit
 #set safe auto load globally (make sure gdb directory exists first)
