@@ -8,7 +8,7 @@ from pygments.lexers.c_cpp import CLexer
 from pygments.formatters import Terminal256Formatter, HtmlFormatter
 from PyQt6.QtCore import QSize, Qt
 from PyQt6.QtWidgets import *
-from termcolor import colored
+from termcolor import colored, cprint
 import sys
 import os
 
@@ -23,7 +23,7 @@ import gdb
 gdb.execute('b main')
 gdb.execute('r')
 #global debug variable
-DEBUG = 1
+DEBUG = 0
 #heap class doesnt really do anything right now but may be utilized upon further development of this program.
 class Heap:
     def __init__(self) -> None:
@@ -1900,6 +1900,7 @@ def printPair(names,addrs,colors,data):
         else:
             out = colored(f"{names[i]}{spaceString}{addrs[i]}     {data[i]}",colors[i])
         print(out)
+        #cprint(out)
 
 #gdb command to print information from the stat file. 
 class pstat (gdb.Command):
@@ -1998,9 +1999,10 @@ class pmaps (gdb.Command):
 pmaps() 
 #<<TODO>> make saved_EIP point to eip register as data 
 #<<rethere pprint>>
+ #<copy paste information for all functions here>  gdb.execute('pfunc')
 class pprint (gdb.Command):
     """run all p commands and hope for the best
-    <copy paste information for all functions here>  gdb.execute('pfunc')
+   
     To open gui mode the command is 'pwi' or 'pwindow'
     supported commands:
         'pvars'
@@ -2506,9 +2508,10 @@ class tcmd (gdb.Command):
         super(tcmd,self).__init__("tcmd",gdb.COMMAND_USER)
     #this is what happens when they type in the command     
     def invoke(self, arg, from_tty):
-        myProgram.codeWindow.getProgramFilePathForWindow()
+       # myProgram.codeWindow.getProgramFilePathForWindow()
         #gdb.execute("source test.py")
-        print("test print completed")
+       # print("test print completed")
+       cprint("test","red")
 tcmd() 
 
 

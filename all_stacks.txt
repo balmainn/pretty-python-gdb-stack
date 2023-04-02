@@ -1,0 +1,27 @@
+invoking print all stacks
+~~~~stack number 0~~~~
+print pair no color invoked
+---------------------------
+reg/var/func/info    address       what is stored
+---------------------------
+ecx                  0x49c9768     
+function             0x5655624d     function
+notAccessed          0x56556287     function
+eip                  0x565562c1     
+main                 0x565562c1     function
+frame_eip            0x565562c1     
+saved_eip            0xf7de6ed5     eip_0x565562c1
+esi                  0xf7fb4000     
+edi                  0xf7fb4000     
+eax                  0xf7fb6088     
+map_stack_top        0xfffdd000     
+saved_eip            0xffffcf8c     eip_0x565562c1
+esp                  0xffffcf8c     $sp
+previous_sp          0xffffcf90     $sp_0xffffcf8c
+edx                  0xffffcfb4     
+map_stack_bottom     0xffffe000      
+m                    0xffffffa8     
+t                    0xffffffac     
+end                  0xffffffb0     
+buff                 0xffffffb4     
+str                  0xffffffd4     
