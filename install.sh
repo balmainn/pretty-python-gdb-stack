@@ -2,7 +2,7 @@
 #install dependencies 
 sudo apt update
 sudo apt install python3 python3-pip gcc-multilib gdb
-sudo pip install python-dev-tools termcolor PyQt6 PySide6
+sudo pip install python-dev-tools pygments termcolor PyQt6 PySide6
 #fix PyQt6 because pip install is not enough
 
 #try installs with pip3 here <<TODO>>
