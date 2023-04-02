@@ -1298,21 +1298,7 @@ class pfunc (gdb.Command):
                 addrs.insert(0,"address")
                 blank.append("")
                 myProgramWindow.changeCentralLabels([new_list,addrs,blank])
-            #myProgramWindow.changeCentralLabels([new_list,addrs,blank])   
-             
-            # myProgramFunctions.funcSortByNumber()
-            # outst=myProgramFunctions.printAll()
-            # printme = []
-            # for o in outst:
-            #     #printme.append(o)
-            #     print(o)
-            # print("outst[i]~~~~")
-            # for i in range(len(outst)):
-            #     print(i,outst[i][1])    
-            #myProgramWindow.setNumLabels(2) 
-            
-            #myProgramWindow.centralLabel.setText(printme)
-            #print(printme)
+       
 
 pfunc()
 
@@ -1969,10 +1955,10 @@ class changemode (gdb.Command):
         print("invoking changemode") 
         if myProgram.mode == 'default':
             myProgram.mode = 'complex'
-            myProgramWindow.modeCheckBox.setChecked(True)
+           # myProgramWindow.modeCheckBox.setChecked(True)
         elif myProgram.mode == 'complex':
             myProgram.mode = 'default'
-            myProgramWindow.modeCheckBox.setChecked(False)
+           # myProgramWindow.modeCheckBox.setChecked(False)
         else: 
             print("invalid change somehow check pchangemode\nChanging to default.")    
             myProgram.mode = "default"
