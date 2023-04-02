@@ -6,7 +6,7 @@ takes gdb output of a stack and makes it pretty with python
 git clone this repo\
 run sudo install.sh 
 
-#gui version 
+# gui version 
 git clone this repo\
 git switch alpha\
 run sudo install.sh\
