@@ -19,8 +19,9 @@ these files must have the same name, with exception of the extension. Run the be
 example\
 gdb ./simple_program -x ppgdb.py
 
-if gdb complains about auto-load safe-path not being enabled, add the following line to  your .gdbinit file. this file could be located in ~/.config/gdb/.gdbinit
-set auto-load safe-path /
+if gdb complains about auto-load safe-path not being enabled, add the following line to  your .gdbinit file. this file could be located in ~/.config/gdb/.gdbinit\
+set auto-load safe-path / \
+Though not doing this does not break anything
 
 # Commands
 'pwindow'
