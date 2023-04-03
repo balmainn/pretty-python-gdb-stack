@@ -1,14 +1,14 @@
-#<<TODO>>need to add an on_exit button that asks if they want to quit gdb if the window is up. 
 
-#from termios import TIOCM_ST
+import os
 from pygments import highlight
 from pygments.style import Style
 from pygments.token import *
 from pygments.lexers.c_cpp import CLexer
-from pygments.formatters import Terminal256Formatter, HtmlFormatter
-from termcolor import colored, cprint
-import sys
-import os
+#from pygments.formatters import Terminal256Formatter
+from pygments.formatters import Terminal256Formatter as TerminalFormatter
+from termcolor import colored
+
+from pygments.lexer import RegexLexer
 
 
 #     print(l)
@@ -237,7 +237,7 @@ class Stack:
             return
         frameArr = frameStr.splitlines()
         
-        if(0):
+        if(DEBUG):
             for i in range(len(frameArr)):
                 print(i, frameArr[i])
         
@@ -262,7 +262,8 @@ class Stack:
             pass
         arglist = []
         if m:
-            print(f" arglist m: {m}")
+            if(DEBUG):
+                print(f" arglist m: {m}")
             arglist = m[0]
         #print("11-12char: ",frameArr[4][11:12])
         #if the address is unknown, skip it. 
@@ -274,7 +275,8 @@ class Stack:
         if(len(m)==2):
             stored_locals = m[0]
             previous_sp = m[1]
-            print(m)
+            if(DEBUG):
+                print(m)
         if(len(m)==1):
             #stored_locals = m[0]
             previous_sp = m[0]
@@ -585,14 +587,16 @@ class Variables:
                     #remove ' and " characters
                     d1 = o[3].strip('\"')
                     datast =d1.replace("'",'')
-                    print("this is a character")
+                    if(DEBUG):
+                        print("this is a character")
                  #   print(print(f"{var}: {o[3][0]}"))
                 else:
                     #remove ' and " characters
                     d1 = o[2].strip('\"')
                     
                #dont add data that has has not been initialized yet. 
-                print(f"datast: {datast}")
+                if (DEBUG):
+                    print(f"datast: {datast}")
                 if(datast=='<error:'):
                     self.varDatas.append('null')    
                 #<incomplete questionable <<TODO>>
@@ -608,28 +612,30 @@ class Variables:
         return localVariableNames, localVarAddresses
 
     #this will gather all of the variables for the entire program, but not the data.
-    def gatherAllVariables():
+    #not called anywhere
+    
+    # def gatherAllVariables():
         
-        allVariableNames = []
-        allVariableAddresses = []
+    #     allVariableNames = []
+    #     allVariableAddresses = []
 
-            #for each function get its variables
-        for i in range(len(funcNames)):
-            try:
-                localVariableNames = []
-                localVarAddresses = []
-                localVariableNames, localVarAddresses = self.getLocalVariables()
-                #print(allVariableNames, allVariableAddresses)
-                #append local variables to all variables
-                for i in range(len(localVariableNames)):
-                    allVariableAddresses.append(localVarAddresses[i])
-                    allVariableNames.append(localVariableNames[i])
-                    #print(localVariableNames[i], localVarAddresses[i] )
+    #         #for each function get its variables
+    #     for i in range(len(funcNames)):
+    #         try:
+    #             localVariableNames = []
+    #             localVarAddresses = []
+    #             localVariableNames, localVarAddresses = self.getLocalVariables()
+    #             #print(allVariableNames, allVariableAddresses)
+    #             #append local variables to all variables
+    #             for i in range(len(localVariableNames)):
+    #                 allVariableAddresses.append(localVarAddresses[i])
+    #                 allVariableNames.append(localVariableNames[i])
+    #                 #print(localVariableNames[i], localVarAddresses[i] )
 
-                gdb.execute('c')
-            except:
-                pass
-        return allVariableNames, allVariableAddresses
+    #             gdb.execute('c')
+    #         except:
+    #             pass
+    #     return allVariableNames, allVariableAddresses
     #print all of the variable names along with their addresses
     def printAllVars(self):
         allVariableNames = self.varNames
@@ -1201,7 +1207,8 @@ class pstack (gdb.Command):
             argString = arg.strip('').split('-')
             
             print("invoking pstack")
-            print(f"len arg: {len(arg)} it is: {arg} type: {type(arg)} argstring: {argString}")
+            if(DEBUG):
+                print(f"len arg: {len(arg)} it is: {arg} type: {type(arg)} argstring: {argString}")
             
             if(from_tty):
                 if(not myProgram.window.isVisible()):
@@ -1272,7 +1279,8 @@ class pfunc (gdb.Command):
         
         print(f"invoking pfunc {arg} from_tty: {from_tty} isVisible: {myProgramWindow.isVisible()}")    
         myProgramFunctions.populateFunctions()
-        print("myproginfo: ",myProgramFunctions.funcInfo)
+        if(DEBUG):
+            print("myproginfo: ",myProgramFunctions.funcInfo)
         #myProgramFunctions.functionsName
         #myProgramFunctions.fun
         if(from_tty):
@@ -1341,7 +1349,7 @@ class resource (gdb.Command):
     #this is what happens when they type in the command     
     def invoke(self, arg, from_tty):
         
-        gdb.execute("source test.py")
+        gdb.execute("source ppgdb.py")
 resource() 
 #app.setStyleSheet(css)
 
@@ -1350,6 +1358,7 @@ resource()
 
 #this method prints things nicely. 
 def printPair(names,addrs,colors,data):
+    lex = DiffLexer()
     print("invoking printpair")
     const = 20
     print("---------------------------")
@@ -1363,13 +1372,80 @@ def printPair(names,addrs,colors,data):
             spaceString = spaceString + " "
         if(data == ""):
             if (names[i]== 'saved_eip' or names[i]=='previous_sp'):
-                out = colored(f"{names[i]}{spaceString}{addrs[i]}",colors[i], attrs=['bold'])
+                out = (f"{names[i]}{spaceString}{addrs[i]}")
             else:
-                out = colored(f"{names[i]}{spaceString}{addrs[i]}",colors[i])
+                out = (f"{names[i]}{spaceString}{addrs[i]}")
         else:
-            out = colored(f"{names[i]}{spaceString}{addrs[i]}     {data[i]}",colors[i])
-        print(out)
-        #cprint(out)
+            out = (f"{names[i]}{spaceString}{addrs[i]}     {data[i]}")
+        #if(colors[i]=='white'):
+        #    print(out)
+        #else:
+        out2 = highlight(out, lex, TerminalFormatter(style=getStyleColor(colors[i])))
+        out3 = out2.strip()
+        print(out3)
+        #print(out)
+    st = gdb.execute("help info",to_string=True)
+def getStyleColor(color):
+    if(DEBUG):
+       print("COLOR INPUT:",color)
+    if color == "red":
+        return RedStyle
+    elif color == "blue":
+        return BlueStyle
+    elif color == "yellow":
+        return YellowStyle
+    elif color == "magenta":
+        return MagentaStyle
+    elif color == "green":
+        return GreenStyle
+    else: 
+        return WhiteStyle
+
+class WhiteStyle(Style):
+         color = "white"
+         styles = {
+             Token.String:  f'ansi{color}',
+         }
+class RedStyle(Style):
+         color = "red"
+         styles = {
+             Token.String:  f'ansi{color}',
+         }
+class BlueStyle(Style):
+         color = "blue"
+         styles = {
+             Token.String:  f'ansi{color}',
+         }
+class YellowStyle(Style):
+         color = "yellow"
+         styles = {
+             Token.String:  f'ansi{color}',
+         }
+class MagentaStyle(Style):
+         color = "magenta"
+         styles = {
+             Token.String:  f'ansi{color}',
+         }
+class GreenStyle(Style):
+         color = "green"
+         styles = {
+             Token.String:  f'ansi{color}',
+         }
+
+
+class DiffLexer(RegexLexer):
+    name = 'Diff'
+    aliases = ['diff']
+    filenames = ['*.diff']
+
+    tokens = {
+        'root': [
+            #red
+            #(r'\n', Generic.Inserted),
+            (r".*\n", Token.String),
+            #(r'\n', Generic.Heading),
+        ]
+    }
 
 #gdb command to print information from the stat file. 
 class pstat (gdb.Command):
@@ -1630,7 +1706,8 @@ class pprint (gdb.Command):
             #dont add data that has has not been initialized yet. 
                 #print(f"datast: {datast}")
                 if(not myProgram.window.isVisible()):
-                    print("datast: ", datast)
+                    if(DEBUG):
+                        print("datast: ", datast)
                 if(datast=='<error:'):
                    bigListData.append('null') 
                 elif(datast=='()}' or datast=='(int)}' or datast=='(int,'):
@@ -1832,7 +1909,8 @@ def isGDBRunningpy():
             return 0
         else:
             if(not myProgram.window.isVisible()):
-                print(f"i am running, my pid is: {pid}")
+                if(DEBUG):
+                    print(f"i am running, my pid is: {pid}")
             return pid
 
 class pAllStacks (gdb.Command):
