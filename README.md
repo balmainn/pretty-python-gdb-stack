@@ -4,7 +4,7 @@ takes gdb output of a stack and makes it pretty with python
 
 # Installation
 git clone this repo\
-run sudo install.sh 
+run sudo ./install.sh 
 
 # gui version 
 git clone this repo\
