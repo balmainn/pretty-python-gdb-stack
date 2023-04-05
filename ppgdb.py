@@ -5,18 +5,20 @@ from pygments import highlight
 from pygments.style import Style
 from pygments.token import *
 from pygments.lexers.c_cpp import CLexer
-from pygments.formatters import Terminal256Formatter, HtmlFormatter
+from pygments.formatters import Terminal256Formatter as TerminalFormatter
+from pygments.formatters import HtmlFormatter
+from pygments.lexer import RegexLexer
+
 from PyQt6.QtCore import QSize, Qt
-from PyQt6.QtWidgets import *
-from termcolor import colored, cprint
-import sys
-import os
-
-
 from PyQt6.QtWidgets import *
 from PyQt6.QtCore import *
 from PyQt6.QtGui import *
 from  PyQt6 import *
+
+import sys
+import os
+from termcolor import colored, cprint
+
 #     print(l)
 import re
 import gdb
@@ -218,11 +220,11 @@ class Stack:
         #        print(f"{regsize} {line} \n")
                 self.addReg(name,addr)
                 regsize = regsize +1
-        
-        print("before frame info")
+        if(DEBUG):
+            print("before frame info")
         frameNames, frameRegs = self.getFrameInfo()
-        
-        print("after frame info")
+        if(DEBUG):
+            print("after frame info")
         #$sp is the same thing as esp
         # spstring = gdb.execute('x $sp',to_string = True)
         # print(spstring[:10])
@@ -268,7 +270,8 @@ class Stack:
             pass
         arglist = []
         if m:
-            print(f" arglist m: {m}")
+            if(DEBUG):
+                print(f" arglist m: {m}")
             arglist = m[0]
         #print("11-12char: ",frameArr[4][11:12])
         #if the address is unknown, skip it. 
@@ -280,11 +283,13 @@ class Stack:
         if(len(m)==2):
             stored_locals = m[0]
             previous_sp = m[1]
-            print(m)
+            if(DEBUG):
+                print(m)
         if(len(m)==1):
             #stored_locals = m[0]
             previous_sp = m[0]
-            print(m)    
+            if(DEBUG):
+                print(m)    
         #add saved registers to array!
         m = re.findall(eip_savedEip_regex, frameArr[6]) #,4,6
         #print(m)
@@ -599,7 +604,8 @@ class Variables:
                     if(not myProgram.window.w1.isVisible()):
                         datast =d1.replace("'",'')
                #dont add data that has has not been initialized yet. 
-                print(f"datast: {datast}")
+                if(DEBUG):
+                    print(f"datast: {datast}")
                 if(datast=='<error:'):
                     self.varDatas.append('null')    
                 #<incomplete questionable <<TODO>>
@@ -1248,7 +1254,8 @@ class Program:
         def setNumLabels(self,num_needed):
 
             numberCurrentLabels = self.labelsLayout.count()
-            print(f"current number of labels: {numberCurrentLabels} number needed: {num_needed}")
+            if(DEBUG):
+                print(f"current number of labels: {numberCurrentLabels} number needed: {num_needed}")
             #remove all labels
             for i in reversed(range(numberCurrentLabels)):
                 item = self.labelsLayout.itemAt(i)
@@ -1413,8 +1420,9 @@ class Program:
                 codeLines = []
                 with open(file_path, "r") as f:
                     codeLines = f.readlines()
-                print(currentLine)
-                print(codeLines, len(codeLines))
+                if(DEBUG):
+                    print(currentLine)
+                    print(codeLines, len(codeLines))
 
                 for i in range(len(codeLines)):
                     if i == int(currentLine)-1:
@@ -1717,7 +1725,8 @@ class pstack (gdb.Command):
             argString = arg.strip('').split('-')
             
             print("invoking pstack")
-            print(f"len arg: {len(arg)} it is: {arg} type: {type(arg)} argstring: {argString}")
+            if(DEBUG):
+                print(f"len arg: {len(arg)} it is: {arg} type: {type(arg)} argstring: {argString}")
             
             if(from_tty):
                 if(not myProgram.window.isVisible()):
@@ -1788,7 +1797,8 @@ class pfunc (gdb.Command):
         
         print(f"invoking pfunc {arg} from_tty: {from_tty} isVisible: {myProgramWindow.isVisible()}")    
         myProgramFunctions.populateFunctions()
-        print("myproginfo: ",myProgramFunctions.funcInfo)
+        if(DEBUG):
+            print("myproginfo: ",myProgramFunctions.funcInfo)
         #myProgramFunctions.functionsName
         #myProgramFunctions.fun
         if(from_tty):
@@ -1881,6 +1891,7 @@ resource()
 
 #this method prints things nicely. 
 def printPair(names,addrs,colors,data):
+    lex = DiffLexer()
     print("invoking printpair")
     const = 20
     print("---------------------------")
@@ -1894,13 +1905,82 @@ def printPair(names,addrs,colors,data):
             spaceString = spaceString + " "
         if(data == ""):
             if (names[i]== 'saved_eip' or names[i]=='previous_sp'):
-                out = colored(f"{names[i]}{spaceString}{addrs[i]}",colors[i], attrs=['bold'])
+                out = (f"{names[i]}{spaceString}{addrs[i]}")
             else:
-                out = colored(f"{names[i]}{spaceString}{addrs[i]}",colors[i])
+                out = (f"{names[i]}{spaceString}{addrs[i]}")
         else:
-            out = colored(f"{names[i]}{spaceString}{addrs[i]}     {data[i]}",colors[i])
-        print(out)
-        #cprint(out)
+            out = (f"{names[i]}{spaceString}{addrs[i]}     {data[i]}")
+        #if(colors[i]=='white'):
+        #    print(out)
+        #else:
+        out2 = highlight(out, lex, TerminalFormatter(style=getStyleColor(colors[i])))
+        out3 = out2.strip()
+        print(out3)
+        #print(out)
+    st = gdb.execute("help info",to_string=True)
+#returns a given style based on the input color as a string
+def getStyleColor(color):
+    if(DEBUG):
+       print("COLOR INPUT:",color)
+    if color == "red":
+        return RedStyle
+    elif color == "blue":
+        return BlueStyle
+    elif color == "yellow":
+        return YellowStyle
+    elif color == "magenta":
+        return MagentaStyle
+    elif color == "green":
+        return GreenStyle
+    else: 
+        return WhiteStyle
+
+#styles used for coloring output
+class WhiteStyle(Style):
+         color = "white"
+         styles = {
+             Token.String:  f'ansi{color}',
+         }
+class RedStyle(Style):
+         color = "red"
+         styles = {
+             Token.String:  f'ansi{color}',
+         }
+class BlueStyle(Style):
+         color = "blue"
+         styles = {
+             Token.String:  f'ansi{color}',
+         }
+class YellowStyle(Style):
+         color = "yellow"
+         styles = {
+             Token.String:  f'ansi{color}',
+         }
+class MagentaStyle(Style):
+         color = "magenta"
+         styles = {
+             Token.String:  f'ansi{color}',
+         }
+class GreenStyle(Style):
+         color = "green"
+         styles = {
+             Token.String:  f'ansi{color}',
+         }
+
+#simply grabs everything on each line
+class DiffLexer(RegexLexer):
+    name = 'Diff'
+    aliases = ['diff']
+    filenames = ['*.diff']
+
+    tokens = {
+        'root': [
+            #red
+            #(r'\n', Generic.Inserted),
+            (r".*\n", Token.String),
+            #(r'\n', Generic.Heading),
+        ]
+    }
 
 #gdb command to print information from the stat file. 
 class pstat (gdb.Command):
@@ -2161,7 +2241,8 @@ class pprint (gdb.Command):
             #dont add data that has has not been initialized yet. 
                 #print(f"datast: {datast}")
                 if(not myProgram.window.isVisible()):
-                    print("datast: ", datast)
+                    if(DEBUG):
+                        print("datast: ", datast)
                 if(datast=='<error:'):
                    bigListData.append('null') 
                 elif(datast=='()}' or datast=='(int)}' or datast=='(int,'):
