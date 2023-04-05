@@ -65,3 +65,9 @@ complex mode:
 Debug mode: 
 - print debug information (lots of terminal output helpful trace information in finding problems with the program )
 - enabled by changing DEBUG = 1 at the top of the pprint.py file. 
+
+### Sample Execution picture of GUI
+<p align="center">
+  <img src="HelpPicture/sample execution.png" width="1050" title="sample execution picture">
+  
+</p>
