@@ -25,7 +25,7 @@ Though not doing this does not break anything
 
 # Commands
 'pwindow'
- - Opens the gui. The gui supports the following typed commands as well as any gdb command. 
+ - Not supported in this version. To use the GUI please use the gui branch of this repo.
 
 'pvars'
 - Prints variables, their contents, and location on the stack
