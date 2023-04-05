@@ -18,7 +18,10 @@ these files must have the same name, with exception of the extension. Run the be
 ### gdb ./executable -x ppgdb.py
 example\
 gdb ./simple_program -x ppgdb.py
-
+### Method 2 
+Start debugging with gdb with the command gdb ./your-executable\
+set ppgdb.py as the source file with source ppgdb.py 
+### auto load safe path
 if gdb complains about auto-load safe-path not being enabled, add the following line to  your .gdbinit file. this file could be located in ~/.config/gdb/.gdbinit\
 set auto-load safe-path / \
 Though not doing this does not break anything
